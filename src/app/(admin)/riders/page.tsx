@@ -24,6 +24,9 @@ export default function RidersPage() {
         care_types: [], work_formats: [], bio: '', hobbies: []
     })
     const [submitting, setSubmitting] = useState(false)
+    const [editingSpecialization, setEditingSpecialization] = useState<string | null>(null)
+
+
 
     const fetchData = useCallback(async () => {
         try {
@@ -71,6 +74,21 @@ export default function RidersPage() {
         await fetch(`${API_BASE}/admin/riders/${id}`, { method: 'DELETE' })
         fetchData()
     }
+
+    const updateSpecialization = async (riderId: string, newService: string) => {
+        try {
+            await fetch(`${API_BASE}/admin/riders/${riderId}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ service: newService }),
+            })
+            fetchData()
+            setEditingSpecialization(null)
+        } catch (e) {
+            console.error('Update specialization failed:', e)
+        }
+    }
+
 
     const resetForm = () => {
         setShowForm(false)
@@ -362,10 +380,27 @@ export default function RidersPage() {
                                         </div>
                                     </td>
                                     <td className="px-6 py-5">
-                                        <div className="space-y-1.5">
-                                            <span className="px-2 py-0.5 rounded-lg text-[10px] font-bold bg-primary/10 text-primary border border-primary/20 uppercase tracking-tighter">
-                                                {rider.service?.replace('_', ' ')}
-                                            </span>
+                                        <div className="space-y-1.5 flex flex-col items-start">
+                                            {editingSpecialization === rider.id ? (
+                                                <select 
+                                                    autoFocus
+                                                    className="bg-[#1A1A1A] border border-primary/40 rounded-lg text-[10px] font-bold px-2 py-1 focus:outline-none focus:ring-1 focus:ring-primary"
+                                                    value={rider.service}
+                                                    onBlur={() => setEditingSpecialization(null)}
+                                                    onChange={(e) => updateSpecialization(rider.id, e.target.value)}
+                                                >
+                                                    {services.map(s => (
+                                                        <option key={s.id} value={s.name}>{s.name.replace('_', ' ')}</option>
+                                                    ))}
+                                                </select>
+                                            ) : (
+                                                <button 
+                                                    onClick={() => setEditingSpecialization(rider.id)}
+                                                    className="px-2 py-0.5 rounded-lg text-[10px] font-bold bg-primary/10 text-primary border border-primary/20 uppercase tracking-tighter hover:bg-primary/20 transition-all cursor-pointer"
+                                                >
+                                                    {rider.service?.replace('_', ' ')}
+                                                </button>
+                                            )}
                                             {rider.hub_id && (
                                                 <div className="flex items-center gap-1 text-[11px] text-muted-foreground">
                                                     <MapPin className="w-3 h-3" /> {hubs.find(h => h.id === rider.hub_id)?.name || 'Matching Hub'}
@@ -373,6 +408,7 @@ export default function RidersPage() {
                                             )}
                                         </div>
                                     </td>
+
                                     <td className="px-6 py-5">
                                         <div className="flex flex-wrap gap-1">
                                             {rider.govt_id_verified && <span className="px-1.5 py-0.5 rounded-md bg-green-500/10 text-green-400 text-[10px] font-medium border border-green-500/20">ID</span>}
