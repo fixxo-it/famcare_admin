@@ -18,7 +18,7 @@ export default function ServicesPage() {
 
     const fetchServices = useCallback(async () => {
         try {
-            const res = await fetch(`${API_BASE}/services`, { cache: 'no-store' })
+            const res = await fetch(`${API_BASE}/services/`, { cache: 'no-store' })
             const data = await res.json()
             setServices(Array.isArray(data) ? data : [])
         } catch (e) {

@@ -17,7 +17,7 @@ export default function HubsPage() {
 
     const fetchHubs = useCallback(async () => {
         try {
-            const res = await fetch(`${API_BASE}/hubs`, { cache: 'no-store' })
+            const res = await fetch(`${API_BASE}/hubs/`, { cache: 'no-store' })
             const data = await res.json()
             setHubs(Array.isArray(data) ? data : [])
         } catch (e) {
