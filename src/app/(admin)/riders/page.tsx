@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Bike, Star, MapPin, Search, RefreshCw, PlusCircle, X, CheckCircle2, Users, Pencil, Trash2, Globe, ShieldCheck, Briefcase, Heart, BookOpen } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
+import MapSDK from '@/components/MapSDK'
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api'
 
@@ -16,7 +17,8 @@ export default function RidersPage() {
     const [search, setSearch] = useState('')
     const [activeTab, setActiveTab] = useState('general')
     const [formData, setFormData] = useState<any>({
-        name: '', phone: '', service: '', address: '', hub_id: '',
+        name: '', phone: '', sub_service_id: '', other_sub_service_ids: [], 
+        address: '', hub_id: '',
         gender: '', age: '', languages: [], 
         govt_id_verified: false, govt_id_type: '', address_verified: false,
         background_check_status: 'pending', verification_badge: 'none',
@@ -25,7 +27,7 @@ export default function RidersPage() {
     })
     const [submitting, setSubmitting] = useState(false)
     const [editingSpecialization, setEditingSpecialization] = useState<string | null>(null)
-    const [serviceEnums, setServiceEnums] = useState<string[]>([])
+    const [serviceEnums, setServiceEnums] = useState<any[]>([])
 
 
 
@@ -81,12 +83,12 @@ export default function RidersPage() {
         fetchData()
     }
 
-    const updateSpecialization = async (riderId: string, newService: string) => {
+    const updateSpecialization = async (riderId: string, newId: string) => {
         try {
             await fetch(`${API_BASE}/admin/riders/${riderId}`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ service: newService }),
+                body: JSON.stringify({ sub_service_id: newId }),
             })
             fetchData()
             setEditingSpecialization(null)
@@ -199,11 +201,10 @@ export default function RidersPage() {
                                                     <input required value={formData.phone} onChange={(e) => setFormData((p:any) => ({ ...p, phone: e.target.value }))} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm" placeholder="+91..." />
                                                 </div>
                                                 <div>
-                                                    <label className="text-xs text-muted-foreground mb-1 block">Primary Service</label>
-                                                    <select required value={formData.service} onChange={(e) => setFormData((p:any) => ({ ...p, service: e.target.value }))} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm">
-                                                        <option value="">Select Service</option>
-                                                        {serviceEnums.map(e => <option key={e} value={e}>{e.replace('_', ' ')}</option>)}
-
+                                                    <label className="text-xs text-muted-foreground mb-1 block">Primary Specialization</label>
+                                                    <select required value={formData.sub_service_id} onChange={(e) => setFormData((p:any) => ({ ...p, sub_service_id: e.target.value }))} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm">
+                                                        <option value="">Select Sub-service</option>
+                                                        {serviceEnums.map((e: any) => <option key={e.id} value={e.id}>{e.name} ({e.service_name})</option>)}
                                                     </select>
                                                 </div>
                                             </div>
@@ -219,6 +220,13 @@ export default function RidersPage() {
                                                     <label className="text-xs text-muted-foreground mb-1 block">Profile Photo URL</label>
                                                     <input value={formData.profile_photo || ''} onChange={(e) => setFormData((p:any) => ({ ...p, profile_photo: e.target.value }))} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm" placeholder="https://..." />
                                                 </div>
+                                            </div>
+                                            <div className="h-[250px] mb-2">
+                                                <label className="text-xs text-muted-foreground mb-1 block">Base Location (Precise)</label>
+                                                <MapSDK 
+                                                    initialPosition={{ lat: formData.latitude || 12.9716, lng: formData.longitude || 77.5946 }}
+                                                    onPositionChange={(pos: {lat: number, lng: number}) => setFormData((p:any) => ({ ...p, latitude: pos.lat, longitude: pos.lng }))}
+                                                />
                                             </div>
                                         </div>
                                     </div>
@@ -392,22 +400,21 @@ export default function RidersPage() {
                                                 <select 
                                                     autoFocus
                                                     className="bg-[#1A1A1A] border border-primary/40 rounded-lg text-[10px] font-bold px-2 py-1 focus:outline-none focus:ring-1 focus:ring-primary"
-                                                    value={rider.service}
+                                                    value={rider.sub_service_id}
                                                     onBlur={() => setEditingSpecialization(null)}
                                                     onChange={(e) => updateSpecialization(rider.id, e.target.value)}
                                                 >
-                                                    <option value={rider.service}>{rider.service?.replace('_', ' ')}</option>
-                                                    {serviceEnums.filter(e => e !== rider.service).map(e => (
-                                                        <option key={e} value={e}>{e.replace('_', ' ')}</option>
+                                                    <option value={rider.sub_service_id}>Select...</option>
+                                                    {serviceEnums.map((e: any) => (
+                                                        <option key={e.id} value={e.id}>{e.name}</option>
                                                     ))}
-
                                                 </select>
                                             ) : (
                                                 <button 
                                                     onClick={() => setEditingSpecialization(rider.id)}
                                                     className="px-2 py-0.5 rounded-lg text-[10px] font-bold bg-primary/10 text-primary border border-primary/20 uppercase tracking-tighter hover:bg-primary/20 transition-all cursor-pointer"
                                                 >
-                                                    {rider.service?.replace('_', ' ')}
+                                                    {serviceEnums.find((e: any) => e.id === rider.sub_service_id)?.name || 'Needs Assignment'}
                                                 </button>
                                             )}
                                             {rider.hub_id && (

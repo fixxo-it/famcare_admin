@@ -11,6 +11,7 @@ export default function CouponsPage() {
     const [loading, setLoading] = useState(true)
     const [showForm, setShowForm] = useState(false)
     const [editCoupon, setEditCoupon] = useState<any>(null)
+    const [services, setServices] = useState<any[]>([])
     const [formData, setFormData] = useState({
         code: '',
         discount_type: 'flat',
@@ -19,17 +20,22 @@ export default function CouponsPage() {
         max_discount: 0,
         expiry_date: '',
         usage_limit: 0,
+        allowed_sub_service_ids: [] as string[],
         is_active: true
     })
     const [submitting, setSubmitting] = useState(false)
 
     const fetchCoupons = useCallback(async () => {
         try {
-            const res = await fetch(`${API_BASE}/coupons/`, { cache: 'no-store' })
-            const data = await res.json()
-            setCoupons(Array.isArray(data) ? data : [])
+            const [cRes, sRes] = await Promise.all([
+                fetch(`${API_BASE}/coupons/`, { cache: 'no-store' }),
+                fetch(`${API_BASE}/admin/service-types`, { cache: 'no-store' })
+            ])
+            const [cData, sData] = await Promise.all([cRes.json(), sRes.json()])
+            setCoupons(Array.isArray(cData) ? cData : [])
+            setServices(Array.isArray(sData) ? sData : [])
         } catch (e) {
-            console.error('Failed to fetch coupons:', e)
+            console.error('Failed to fetch data:', e)
         } finally {
             setLoading(false)
         }
@@ -80,6 +86,7 @@ export default function CouponsPage() {
             max_discount: 0,
             expiry_date: '',
             usage_limit: 0,
+            allowed_sub_service_ids: [],
             is_active: true
         })
     }
@@ -94,6 +101,7 @@ export default function CouponsPage() {
             max_discount: coupon.max_discount || 0,
             expiry_date: coupon.expiry_date ? new Date(coupon.expiry_date).toISOString().split('T')[0] : '',
             usage_limit: coupon.usage_limit || 0,
+            allowed_sub_service_ids: coupon.allowed_sub_service_ids || [],
             is_active: coupon.is_active
         })
         setShowForm(true)
