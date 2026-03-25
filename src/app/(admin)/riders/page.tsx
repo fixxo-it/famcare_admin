@@ -25,26 +25,32 @@ export default function RidersPage() {
     })
     const [submitting, setSubmitting] = useState(false)
     const [editingSpecialization, setEditingSpecialization] = useState<string | null>(null)
+    const [serviceEnums, setServiceEnums] = useState<string[]>([])
+
+
 
 
 
     const fetchData = useCallback(async () => {
         try {
-            const [rRes, hRes, sRes] = await Promise.all([
+            const [rRes, hRes, sRes, eRes] = await Promise.all([
                 fetch(`${API_BASE}/admin/riders`, { cache: 'no-store' }),
                 fetch(`${API_BASE}/hubs/`, { cache: 'no-store' }),
-                fetch(`${API_BASE}/services/`, { cache: 'no-store' })
+                fetch(`${API_BASE}/services/`, { cache: 'no-store' }),
+                fetch(`${API_BASE}/admin/service-types`, { cache: 'no-store' })
             ])
-            const [rData, hData, sData] = await Promise.all([rRes.json(), hRes.json(), sRes.json()])
+            const [rData, hData, sData, eData] = await Promise.all([rRes.json(), hRes.json(), sRes.json(), eRes.json()])
             setRiders(Array.isArray(rData) ? rData : [])
             setHubs(Array.isArray(hData) ? hData : [])
             setServices(Array.isArray(sData) ? sData : [])
+            setServiceEnums(Array.isArray(eData) ? eData : [])
         } catch (e) {
             console.error('Failed to fetch data:', e)
         } finally {
             setLoading(false)
         }
     }, [])
+
 
     useEffect(() => { fetchData() }, [fetchData])
 
@@ -196,7 +202,8 @@ export default function RidersPage() {
                                                     <label className="text-xs text-muted-foreground mb-1 block">Primary Service</label>
                                                     <select required value={formData.service} onChange={(e) => setFormData((p:any) => ({ ...p, service: e.target.value }))} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm">
                                                         <option value="">Select Service</option>
-                                                        {services.map(s => <option key={s.id} value={s.name}>{s.name}</option>)}
+                                                        {serviceEnums.map(e => <option key={e} value={e}>{e.replace('_', ' ')}</option>)}
+
                                                     </select>
                                                 </div>
                                             </div>
@@ -389,9 +396,11 @@ export default function RidersPage() {
                                                     onBlur={() => setEditingSpecialization(null)}
                                                     onChange={(e) => updateSpecialization(rider.id, e.target.value)}
                                                 >
-                                                    {services.map(s => (
-                                                        <option key={s.id} value={s.name}>{s.name.replace('_', ' ')}</option>
+                                                    <option value={rider.service}>{rider.service?.replace('_', ' ')}</option>
+                                                    {serviceEnums.filter(e => e !== rider.service).map(e => (
+                                                        <option key={e} value={e}>{e.replace('_', ' ')}</option>
                                                     ))}
+
                                                 </select>
                                             ) : (
                                                 <button 
