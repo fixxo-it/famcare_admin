@@ -2,7 +2,7 @@
  * API client for communicating with the FamCARE Sutram (FastAPI) backend.
  */
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api'
+const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api').replace(/\/$/, '')
 
 export interface ApiResponse<T = any> {
     data: T | null

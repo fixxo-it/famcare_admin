@@ -29,8 +29,8 @@ export default function RidersPage() {
         try {
             const [rRes, hRes, sRes] = await Promise.all([
                 fetch(`${API_BASE}/admin/riders`, { cache: 'no-store' }),
-                fetch(`${API_BASE}/hubs`, { cache: 'no-store' }),
-                fetch(`${API_BASE}/services`, { cache: 'no-store' })
+                fetch(`${API_BASE}/hubs/`, { cache: 'no-store' }),
+                fetch(`${API_BASE}/services/`, { cache: 'no-store' })
             ])
             const [rData, hData, sData] = await Promise.all([rRes.json(), hRes.json(), sRes.json()])
             setRiders(Array.isArray(rData) ? rData : [])
