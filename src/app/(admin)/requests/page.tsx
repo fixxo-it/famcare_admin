@@ -204,8 +204,8 @@ export default function RequestsPage() {
                                                             className="bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 text-xs focus:ring-2 focus:ring-primary/50 focus:outline-none"
                                                         >
                                                             <option value="">Select rider</option>
-                                                            {riders.filter(r => r.is_available).map((r) => (
-                                                                <option key={r.id} value={r.id}>{r.name} ({r.sub_service_id ? getSubServiceName(r.sub_service_id) : r.service || '?'})</option>
+                                                            {riders.map((r) => (
+                                                                <option key={r.id} value={r.id}>{r.name} ({r.sub_service_id ? (subServices.find(s => s.id === r.sub_service_id)?.service_name || '?') : r.service || '?'}){!r.is_available ? ' — offline' : ''}</option>
                                                             ))}
                                                         </select>
                                                         <button
