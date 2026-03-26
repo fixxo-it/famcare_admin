@@ -11,6 +11,7 @@ const STATUS_OPTIONS = ['all', 'new', 'assigned', 'scheduled', 'en_route', 'arri
 export default function RequestsPage() {
     const [requests, setRequests] = useState<any[]>([])
     const [riders, setRiders] = useState<any[]>([])
+    const [subServices, setSubServices] = useState<{id: string, name: string, service_name: string}[]>([])
     const [loading, setLoading] = useState(true)
     const [filter, setFilter] = useState('all')
     const [search, setSearch] = useState('')
@@ -18,16 +19,21 @@ export default function RequestsPage() {
     const [selectedRider, setSelectedRider] = useState<string>('')
     const [refreshing, setRefreshing] = useState(false)
 
+    const getSubServiceName = (id: string) => subServices.find(s => s.id === id)?.name || '—'
+
     const fetchData = useCallback(async () => {
         try {
-            const [reqRes, riderRes] = await Promise.all([
+            const [reqRes, riderRes, subRes] = await Promise.all([
                 fetch(`${API_BASE}/admin/requests`, { cache: 'no-store' }),
                 fetch(`${API_BASE}/admin/riders`, { cache: 'no-store' }),
+                fetch(`${API_BASE}/admin/service-types`, { cache: 'no-store' }),
             ])
             const reqData = await reqRes.json()
             const riderData = await riderRes.json()
+            const subData = await subRes.json()
             setRequests(Array.isArray(reqData) ? reqData : [])
             setRiders(Array.isArray(riderData) ? riderData : [])
+            setSubServices(Array.isArray(subData) ? subData : [])
         } catch (e) {
             console.error('Failed to fetch data:', e)
         } finally {
@@ -170,7 +176,7 @@ export default function RequestsPage() {
                                     >
                                         <td className="px-6 py-4">
                                             <span className="px-2.5 py-1 rounded-lg text-xs font-medium bg-primary/10 text-primary border border-primary/20 capitalize">
-                                                {req.service?.replace('_', ' ')}
+                                                {req.sub_service_id ? getSubServiceName(req.sub_service_id) : req.service?.replace('_', ' ') || '—'}
                                             </span>
                                         </td>
                                         <td className="px-6 py-4 text-sm">{req.user_phone}</td>
@@ -199,7 +205,7 @@ export default function RequestsPage() {
                                                         >
                                                             <option value="">Select rider</option>
                                                             {riders.filter(r => r.is_available).map((r) => (
-                                                                <option key={r.id} value={r.id}>{r.name} ({r.service})</option>
+                                                                <option key={r.id} value={r.id}>{r.name} ({r.sub_service_id ? (subServices.find(s => s.id === r.sub_service_id)?.service_name || '?') : r.service || '?'})</option>
                                                             ))}
                                                         </select>
                                                         <button

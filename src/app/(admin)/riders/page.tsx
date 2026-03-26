@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { Bike, Star, MapPin, Search, RefreshCw, PlusCircle, X, CheckCircle2, Users, Pencil, Trash2, Globe, ShieldCheck, Briefcase, Heart, BookOpen } from 'lucide-react'
+import { Bike, Star, MapPin, Search, RefreshCw, PlusCircle, X, CheckCircle2, Users, Pencil, Trash2, ShieldCheck, Briefcase, BookOpen, Plus } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import MapSDK from '@/components/MapSDK'
 
@@ -10,7 +10,7 @@ const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api'
 export default function RidersPage() {
     const [riders, setRiders] = useState<any[]>([])
     const [hubs, setHubs] = useState<any[]>([])
-    const [services, setServices] = useState<any[]>([])
+    const [subServices, setSubServices] = useState<any[]>([])
     const [loading, setLoading] = useState(true)
     const [showForm, setShowForm] = useState(false)
     const [editRider, setEditRider] = useState<any>(null)
@@ -35,17 +35,15 @@ export default function RidersPage() {
 
     const fetchData = useCallback(async () => {
         try {
-            const [rRes, hRes, sRes, eRes] = await Promise.all([
+            const [rRes, hRes, eRes] = await Promise.all([
                 fetch(`${API_BASE}/admin/riders`, { cache: 'no-store' }),
                 fetch(`${API_BASE}/hubs/`, { cache: 'no-store' }),
-                fetch(`${API_BASE}/services/`, { cache: 'no-store' }),
                 fetch(`${API_BASE}/admin/service-types`, { cache: 'no-store' })
             ])
-            const [rData, hData, sData, eData] = await Promise.all([rRes.json(), hRes.json(), sRes.json(), eRes.json()])
+            const [rData, hData, eData] = await Promise.all([rRes.json(), hRes.json(), eRes.json()])
             setRiders(Array.isArray(rData) ? rData : [])
             setHubs(Array.isArray(hData) ? hData : [])
-            setServices(Array.isArray(sData) ? sData : [])
-            setServiceEnums(Array.isArray(eData) ? eData : [])
+            setSubServices(Array.isArray(eData) ? eData : [])
         } catch (e) {
             console.error('Failed to fetch data:', e)
         } finally {
@@ -56,7 +54,7 @@ export default function RidersPage() {
 
     useEffect(() => { fetchData() }, [fetchData])
 
-    const handleSubmit = async (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.SyntheticEvent) => {
         e.preventDefault()
         setSubmitting(true)
         try {
@@ -97,13 +95,26 @@ export default function RidersPage() {
         }
     }
 
+    const toggleParentService = (parentName: string) => {
+        const ids = getSubIdsByParent(parentName)
+        setFormData((p: any) => {
+            const current: string[] = p.other_sub_service_ids || []
+            const allChecked = ids.every((id: string) => current.includes(id))
+            const updated = allChecked
+                ? current.filter((id: string) => !ids.includes(id))
+                : [...new Set([...current, ...ids])]
+            return { ...p, other_sub_service_ids: updated }
+        })
+    }
+
 
     const resetForm = () => {
         setShowForm(false)
         setEditRider(null)
         setFormData({
-            name: '', phone: '', service: '', address: '', hub_id: '',
-            gender: '', age: '', languages: [], 
+            name: '', phone: '', sub_service_id: '', other_sub_service_ids: [],
+            address: '', hub_id: '',
+            gender: '', age: '', languages: [],
             govt_id_verified: false, govt_id_type: '', address_verified: false,
             background_check_status: 'pending', verification_badge: 'none',
             medical_checkup: false, experience_years: 0,
@@ -116,6 +127,8 @@ export default function RidersPage() {
         setEditRider(rider)
         setFormData({
             ...rider,
+            sub_service_id: rider.sub_service_id || '',
+            other_sub_service_ids: rider.other_sub_service_ids || [],
             languages: rider.languages || [],
             care_types: rider.care_types || [],
             work_formats: rider.work_formats || [],
@@ -127,7 +140,7 @@ export default function RidersPage() {
     const filtered = riders.filter((r) => {
         if (!search) return true
         const q = search.toLowerCase()
-        return r.name?.toLowerCase().includes(q) || r.phone?.includes(q) || r.service?.toLowerCase().includes(q)
+        return r.name?.toLowerCase().includes(q) || r.phone?.includes(q) || getSubServiceName(r.sub_service_id).toLowerCase().includes(q)
     })
 
     if (loading) {
@@ -182,18 +195,22 @@ export default function RidersPage() {
                             
                             <div className="flex border-b border-white/10 px-6">
                                 <TabButton id="general" label="General" icon={Bike} />
+                                <TabButton id="services" label="Services" icon={Briefcase} />
                                 <TabButton id="identity" label="Identity" icon={BookOpen} />
                                 <TabButton id="verification" label="Trust" icon={ShieldCheck} />
-                                <TabButton id="experience" label="Experience" icon={Briefcase} />
                             </div>
 
                             <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-6">
                                 {activeTab === 'general' && (
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <div className="md:col-span-2 space-y-4">
+                                    <div className="space-y-4">
+                                        <div>
+                                            <label className="text-xs text-muted-foreground mb-1 block">Full Name</label>
+                                            <input required value={formData.name} onChange={(e) => setFormData((p:any) => ({ ...p, name: e.target.value }))} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm" placeholder="e.g. Sarah Johnson" />
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-4">
                                             <div>
-                                                <label className="text-xs text-muted-foreground mb-1 block">Full Name</label>
-                                                <input required value={formData.name} onChange={(e) => setFormData((p:any) => ({ ...p, name: e.target.value }))} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm" placeholder="e.g. Sarah Johnson" />
+                                                <label className="text-xs text-muted-foreground mb-1 block">Phone</label>
+                                                <input required value={formData.phone} onChange={(e) => setFormData((p:any) => ({ ...p, phone: e.target.value }))} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm" placeholder="+91..." />
                                             </div>
                                             <div className="grid grid-cols-2 gap-4">
                                                 <div>
@@ -208,18 +225,65 @@ export default function RidersPage() {
                                                     </select>
                                                 </div>
                                             </div>
-                                            <div className="grid grid-cols-2 gap-4">
-                                                <div>
-                                                    <label className="text-xs text-muted-foreground mb-1 block">Assigned Hub</label>
-                                                    <select value={formData.hub_id || ''} onChange={(e) => setFormData((p:any) => ({ ...p, hub_id: e.target.value }))} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm">
-                                                        <option value="">None (Free Roam)</option>
-                                                        {hubs.map(h => <option key={h.id} value={h.id}>{h.name}</option>)}
-                                                    </select>
-                                                </div>
-                                                <div>
-                                                    <label className="text-xs text-muted-foreground mb-1 block">Profile Photo URL</label>
-                                                    <input value={formData.profile_photo || ''} onChange={(e) => setFormData((p:any) => ({ ...p, profile_photo: e.target.value }))} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm" placeholder="https://..." />
-                                                </div>
+                                        </div>
+                                        <div>
+                                            <label className="text-xs text-muted-foreground mb-1 block">Profile Photo URL</label>
+                                            <input value={formData.profile_photo || ''} onChange={(e) => setFormData((p:any) => ({ ...p, profile_photo: e.target.value }))} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm" placeholder="https://..." />
+                                        </div>
+                                    </div>
+                                )}
+
+                                {activeTab === 'services' && (
+                                    <div className="space-y-6">
+                                        <div>
+                                            <label className="text-xs text-muted-foreground mb-2 block font-bold uppercase tracking-wider">Primary Service *</label>
+                                            <select
+                                                required
+                                                value={formData.sub_service_id}
+                                                onChange={(e) => setFormData((p: any) => ({
+                                                    ...p,
+                                                    sub_service_id: e.target.value,
+                                                    other_sub_service_ids: (p.other_sub_service_ids || []).filter((id: string) => id !== e.target.value)
+                                                }))}
+                                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm"
+                                            >
+                                                <option value="">Select Primary Service</option>
+                                                {Object.entries(serviceGroups).map(([parentName, subs]: [string, any]) => (
+                                                    <optgroup key={parentName} label={parentName}>
+                                                        {(subs as any[]).map((s: any) => (
+                                                            <option key={s.id} value={s.id}>{s.name}</option>
+                                                        ))}
+                                                    </optgroup>
+                                                ))}
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label className="text-xs text-muted-foreground mb-2 block font-bold uppercase tracking-wider">Additional Services</label>
+                                            <p className="text-xs text-muted-foreground mb-3">Caretaker will also be matched for these services.</p>
+                                            <div className="grid grid-cols-1 gap-2">
+                                                {(() => {
+                                                    const primaryParent = subServices.find(s => s.id === formData.sub_service_id)?.service_name
+                                                    const groups = Object.entries(serviceGroups).filter(([pName]) => pName !== primaryParent)
+                                                    if (groups.length === 0) return (
+                                                        <p className="text-xs text-muted-foreground italic">Select a primary service first to see additional options.</p>
+                                                    )
+                                                    return groups.map(([parentName, subs]: [string, any]) => {
+                                                        const subIds = (subs as any[]).map((s: any) => s.id)
+                                                        const allChecked = subIds.every((id: string) => (formData.other_sub_service_ids || []).includes(id))
+                                                        const someChecked = subIds.some((id: string) => (formData.other_sub_service_ids || []).includes(id))
+                                                        return (
+                                                            <label key={parentName} onClick={() => toggleParentService(parentName)} className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${allChecked || someChecked ? 'bg-primary/10 border-primary/40' : 'bg-white/5 border-white/10 hover:border-white/20'}`}>
+                                                                <div className={`w-5 h-5 rounded-md border flex items-center justify-center flex-shrink-0 transition-all ${allChecked ? 'bg-primary border-primary' : someChecked ? 'bg-primary/30 border-primary/40' : 'border-white/20'}`}>
+                                                                    {(allChecked || someChecked) && <Plus className="w-3 h-3 text-white" />}
+                                                                </div>
+                                                                <div>
+                                                                    <p className="text-sm font-medium">{parentName}</p>
+                                                                    <p className="text-xs text-muted-foreground">{(subs as any[]).length} sub-service{(subs as any[]).length > 1 ? 's' : ''}</p>
+                                                                </div>
+                                                            </label>
+                                                        )
+                                                    })
+                                                })()}
                                             </div>
                                             <div className="h-[250px] mb-2">
                                                 <label className="text-xs text-muted-foreground mb-1 block">Base Location (Precise)</label>
@@ -397,12 +461,12 @@ export default function RidersPage() {
                                     <td className="px-6 py-5">
                                         <div className="space-y-1.5 flex flex-col items-start">
                                             {editingSpecialization === rider.id ? (
-                                                <select 
+                                                <select
                                                     autoFocus
                                                     className="bg-[#1A1A1A] border border-primary/40 rounded-lg text-[10px] font-bold px-2 py-1 focus:outline-none focus:ring-1 focus:ring-primary"
                                                     value={rider.sub_service_id}
                                                     onBlur={() => setEditingSpecialization(null)}
-                                                    onChange={(e) => updateSpecialization(rider.id, e.target.value)}
+                                                    onChange={(e) => updatePrimaryService(rider.id, e.target.value)}
                                                 >
                                                     <option value={rider.sub_service_id}>Select...</option>
                                                     {serviceEnums.map((e: any) => (
@@ -410,16 +474,25 @@ export default function RidersPage() {
                                                     ))}
                                                 </select>
                                             ) : (
-                                                <button 
+                                                <button
                                                     onClick={() => setEditingSpecialization(rider.id)}
                                                     className="px-2 py-0.5 rounded-lg text-[10px] font-bold bg-primary/10 text-primary border border-primary/20 uppercase tracking-tighter hover:bg-primary/20 transition-all cursor-pointer"
                                                 >
                                                     {serviceEnums.find((e: any) => e.id === rider.sub_service_id)?.name || 'Needs Assignment'}
                                                 </button>
                                             )}
+                                            {(rider.other_sub_service_ids || []).length > 0 && (
+                                                <div className="flex flex-wrap gap-1">
+                                                    {[...new Set((rider.other_sub_service_ids as string[]).map((id: string) => getParentServiceName(id)))].map((name: any) => (
+                                                        <span key={name} className="px-1.5 py-0.5 rounded-md bg-white/5 text-white/60 text-[9px] font-medium border border-white/10">
+                                                            {name}
+                                                        </span>
+                                                    ))}
+                                                </div>
+                                            )}
                                             {rider.hub_id && (
                                                 <div className="flex items-center gap-1 text-[11px] text-muted-foreground">
-                                                    <MapPin className="w-3 h-3" /> {hubs.find(h => h.id === rider.hub_id)?.name || 'Matching Hub'}
+                                                    <MapPin className="w-3 h-3" /> {hubs.find((h: any) => h.id === rider.hub_id)?.name || 'Hub'}
                                                 </div>
                                             )}
                                         </div>
@@ -441,6 +514,12 @@ export default function RidersPage() {
                                     </td>
                                     <td className="px-6 py-5 text-right">
                                         <div className="flex items-center gap-2 justify-end">
+                                            <button
+                                                onClick={() => toggleAvailability(rider)}
+                                                className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all border ${rider.is_available ? 'bg-green-500/10 text-green-400 border-green-500/20 hover:bg-green-500/20' : 'bg-white/5 text-muted-foreground border-white/10 hover:bg-white/10'}`}
+                                            >
+                                                {rider.is_available ? 'Online' : 'Offline'}
+                                            </button>
                                             <button onClick={() => startEdit(rider)} className="p-2.5 rounded-xl hover:bg-white/10 text-muted-foreground hover:text-white transition-all"><Pencil className="w-4 h-4" /></button>
                                             <button onClick={() => handleDelete(rider.id)} className="p-2.5 rounded-xl hover:bg-red-500/10 text-muted-foreground hover:text-red-400 transition-all"><Trash2 className="w-4 h-4" /></button>
                                         </div>
