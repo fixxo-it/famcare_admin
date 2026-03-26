@@ -330,7 +330,7 @@ export default function ServicesPage() {
                                                                 </div>
                                                                 {isExpanded ? <ChevronDown className="w-4 h-4 text-muted-foreground" /> : <ChevronRight className="w-4 h-4 text-muted-foreground" />}
                                                             </div>
-                                                            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity ml-2">
+                                                            <div className="flex items-center gap-1 ml-2">
                                                                 <button onClick={() => startAddTier(sub.id)} className="p-1.5 text-primary hover:bg-primary/10 rounded-lg" title="Add Pricing Tier"><DollarSign className="w-3.5 h-3.5" /></button>
                                                                 <button onClick={() => startEditSub(sub)} className="p-1.5 text-muted-foreground hover:text-white rounded-lg"><Pencil className="w-3.5 h-3.5" /></button>
                                                                 <button onClick={() => handleDelete('sub', sub.id)} className="p-1.5 text-muted-foreground hover:text-red-400 rounded-lg"><Trash2 className="w-3.5 h-3.5" /></button>
@@ -364,7 +364,7 @@ export default function ServicesPage() {
                                                                                         {tier.discount_price && <span className="text-[10px] text-muted-foreground line-through mr-1">{cs}{tier.price}</span>}
                                                                                         <span className="text-sm font-semibold text-primary">{cs}{tier.discount_price || tier.price}</span>
                                                                                     </div>
-                                                                                    <div className="flex items-center gap-0.5 opacity-0 group-hover/tier:opacity-100 transition-opacity">
+                                                                                    <div className="flex items-center gap-0.5">
                                                                                         <button onClick={() => startEditTier(tier)} className="p-1 text-muted-foreground hover:text-white rounded"><Pencil className="w-3 h-3" /></button>
                                                                                         <button onClick={() => handleDelete('tier', tier.id)} className="p-1 text-muted-foreground hover:text-red-400 rounded"><Trash2 className="w-3 h-3" /></button>
                                                                                     </div>
