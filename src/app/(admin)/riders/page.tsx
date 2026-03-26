@@ -88,6 +88,15 @@ export default function RidersPage() {
         fetchData()
     }
 
+    const toggleAvailability = async (rider: any) => {
+        await fetch(`${API_BASE}/admin/riders/${rider.id}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ is_available: !rider.is_available }),
+        })
+        fetchData()
+    }
+
     const updatePrimaryService = async (riderId: string, newSubServiceId: string) => {
         try {
             await fetch(`${API_BASE}/admin/riders/${riderId}`, {
@@ -512,6 +521,12 @@ export default function RidersPage() {
                                     </td>
                                     <td className="px-6 py-5 text-right">
                                         <div className="flex items-center gap-2 justify-end">
+                                            <button
+                                                onClick={() => toggleAvailability(rider)}
+                                                className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all border ${rider.is_available ? 'bg-green-500/10 text-green-400 border-green-500/20 hover:bg-green-500/20' : 'bg-white/5 text-muted-foreground border-white/10 hover:bg-white/10'}`}
+                                            >
+                                                {rider.is_available ? 'Online' : 'Offline'}
+                                            </button>
                                             <button onClick={() => startEdit(rider)} className="p-2.5 rounded-xl hover:bg-white/10 text-muted-foreground hover:text-white transition-all"><Pencil className="w-4 h-4" /></button>
                                             <button onClick={() => handleDelete(rider.id)} className="p-2.5 rounded-xl hover:bg-red-500/10 text-muted-foreground hover:text-red-400 transition-all"><Trash2 className="w-4 h-4" /></button>
                                         </div>
