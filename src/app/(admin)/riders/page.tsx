@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { Bike, Star, MapPin, Search, RefreshCw, PlusCircle, X, CheckCircle2, Users, Pencil, Trash2, Globe, ShieldCheck, Briefcase, Heart, BookOpen } from 'lucide-react'
+import { Bike, Star, MapPin, Search, RefreshCw, PlusCircle, X, CheckCircle2, Users, Pencil, Trash2, ShieldCheck, Briefcase, BookOpen, Plus } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api'
@@ -9,15 +9,16 @@ const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api'
 export default function RidersPage() {
     const [riders, setRiders] = useState<any[]>([])
     const [hubs, setHubs] = useState<any[]>([])
-    const [services, setServices] = useState<any[]>([])
+    const [subServices, setSubServices] = useState<any[]>([])
     const [loading, setLoading] = useState(true)
     const [showForm, setShowForm] = useState(false)
     const [editRider, setEditRider] = useState<any>(null)
     const [search, setSearch] = useState('')
     const [activeTab, setActiveTab] = useState('general')
     const [formData, setFormData] = useState<any>({
-        name: '', phone: '', service: '', address: '', hub_id: '',
-        gender: '', age: '', languages: [], 
+        name: '', phone: '', sub_service_id: '', other_sub_service_ids: [],
+        address: '', hub_id: '',
+        gender: '', age: '', languages: [],
         govt_id_verified: false, govt_id_type: '', address_verified: false,
         background_check_status: 'pending', verification_badge: 'none',
         medical_checkup: false, experience_years: 0,
@@ -25,7 +26,8 @@ export default function RidersPage() {
     })
     const [submitting, setSubmitting] = useState(false)
     const [editingSpecialization, setEditingSpecialization] = useState<string | null>(null)
-    const [serviceEnums, setServiceEnums] = useState<string[]>([])
+
+    const getSubServiceName = (id: string) => subServices.find(s => s.id === id)?.name || '—'
 
 
 
@@ -33,17 +35,15 @@ export default function RidersPage() {
 
     const fetchData = useCallback(async () => {
         try {
-            const [rRes, hRes, sRes, eRes] = await Promise.all([
+            const [rRes, hRes, eRes] = await Promise.all([
                 fetch(`${API_BASE}/admin/riders`, { cache: 'no-store' }),
                 fetch(`${API_BASE}/hubs/`, { cache: 'no-store' }),
-                fetch(`${API_BASE}/services/`, { cache: 'no-store' }),
                 fetch(`${API_BASE}/admin/service-types`, { cache: 'no-store' })
             ])
-            const [rData, hData, sData, eData] = await Promise.all([rRes.json(), hRes.json(), sRes.json(), eRes.json()])
+            const [rData, hData, eData] = await Promise.all([rRes.json(), hRes.json(), eRes.json()])
             setRiders(Array.isArray(rData) ? rData : [])
             setHubs(Array.isArray(hData) ? hData : [])
-            setServices(Array.isArray(sData) ? sData : [])
-            setServiceEnums(Array.isArray(eData) ? eData : [])
+            setSubServices(Array.isArray(eData) ? eData : [])
         } catch (e) {
             console.error('Failed to fetch data:', e)
         } finally {
@@ -54,7 +54,7 @@ export default function RidersPage() {
 
     useEffect(() => { fetchData() }, [fetchData])
 
-    const handleSubmit = async (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.SyntheticEvent) => {
         e.preventDefault()
         setSubmitting(true)
         try {
@@ -81,12 +81,12 @@ export default function RidersPage() {
         fetchData()
     }
 
-    const updateSpecialization = async (riderId: string, newService: string) => {
+    const updatePrimaryService = async (riderId: string, newSubServiceId: string) => {
         try {
             await fetch(`${API_BASE}/admin/riders/${riderId}`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ service: newService }),
+                body: JSON.stringify({ sub_service_id: newSubServiceId }),
             })
             fetchData()
             setEditingSpecialization(null)
@@ -95,13 +95,24 @@ export default function RidersPage() {
         }
     }
 
+    const toggleAdditionalService = (subServiceId: string) => {
+        setFormData((p: any) => {
+            const current: string[] = p.other_sub_service_ids || []
+            const updated = current.includes(subServiceId)
+                ? current.filter((id: string) => id !== subServiceId)
+                : [...current, subServiceId]
+            return { ...p, other_sub_service_ids: updated }
+        })
+    }
+
 
     const resetForm = () => {
         setShowForm(false)
         setEditRider(null)
         setFormData({
-            name: '', phone: '', service: '', address: '', hub_id: '',
-            gender: '', age: '', languages: [], 
+            name: '', phone: '', sub_service_id: '', other_sub_service_ids: [],
+            address: '', hub_id: '',
+            gender: '', age: '', languages: [],
             govt_id_verified: false, govt_id_type: '', address_verified: false,
             background_check_status: 'pending', verification_badge: 'none',
             medical_checkup: false, experience_years: 0,
@@ -114,6 +125,8 @@ export default function RidersPage() {
         setEditRider(rider)
         setFormData({
             ...rider,
+            sub_service_id: rider.sub_service_id || '',
+            other_sub_service_ids: rider.other_sub_service_ids || [],
             languages: rider.languages || [],
             care_types: rider.care_types || [],
             work_formats: rider.work_formats || [],
@@ -125,7 +138,7 @@ export default function RidersPage() {
     const filtered = riders.filter((r) => {
         if (!search) return true
         const q = search.toLowerCase()
-        return r.name?.toLowerCase().includes(q) || r.phone?.includes(q) || r.service?.toLowerCase().includes(q)
+        return r.name?.toLowerCase().includes(q) || r.phone?.includes(q) || getSubServiceName(r.sub_service_id).toLowerCase().includes(q)
     })
 
     if (loading) {
@@ -180,45 +193,80 @@ export default function RidersPage() {
                             
                             <div className="flex border-b border-white/10 px-6">
                                 <TabButton id="general" label="General" icon={Bike} />
+                                <TabButton id="services" label="Services" icon={Briefcase} />
                                 <TabButton id="identity" label="Identity" icon={BookOpen} />
                                 <TabButton id="verification" label="Trust" icon={ShieldCheck} />
-                                <TabButton id="experience" label="Experience" icon={Briefcase} />
                             </div>
 
                             <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-6">
                                 {activeTab === 'general' && (
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <div className="md:col-span-2 space-y-4">
+                                    <div className="space-y-4">
+                                        <div>
+                                            <label className="text-xs text-muted-foreground mb-1 block">Full Name</label>
+                                            <input required value={formData.name} onChange={(e) => setFormData((p:any) => ({ ...p, name: e.target.value }))} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm" placeholder="e.g. Sarah Johnson" />
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-4">
                                             <div>
-                                                <label className="text-xs text-muted-foreground mb-1 block">Full Name</label>
-                                                <input required value={formData.name} onChange={(e) => setFormData((p:any) => ({ ...p, name: e.target.value }))} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm" placeholder="e.g. Sarah Johnson" />
+                                                <label className="text-xs text-muted-foreground mb-1 block">Phone</label>
+                                                <input required value={formData.phone} onChange={(e) => setFormData((p:any) => ({ ...p, phone: e.target.value }))} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm" placeholder="+91..." />
                                             </div>
-                                            <div className="grid grid-cols-2 gap-4">
-                                                <div>
-                                                    <label className="text-xs text-muted-foreground mb-1 block">Phone</label>
-                                                    <input required value={formData.phone} onChange={(e) => setFormData((p:any) => ({ ...p, phone: e.target.value }))} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm" placeholder="+91..." />
-                                                </div>
-                                                <div>
-                                                    <label className="text-xs text-muted-foreground mb-1 block">Primary Service</label>
-                                                    <select required value={formData.service} onChange={(e) => setFormData((p:any) => ({ ...p, service: e.target.value }))} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm">
-                                                        <option value="">Select Service</option>
-                                                        {serviceEnums.map(e => <option key={e} value={e}>{e.replace('_', ' ')}</option>)}
+                                            <div>
+                                                <label className="text-xs text-muted-foreground mb-1 block">Assigned Hub</label>
+                                                <select value={formData.hub_id || ''} onChange={(e) => setFormData((p:any) => ({ ...p, hub_id: e.target.value }))} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm">
+                                                    <option value="">None (Free Roam)</option>
+                                                    {hubs.map(h => <option key={h.id} value={h.id}>{h.name}</option>)}
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label className="text-xs text-muted-foreground mb-1 block">Profile Photo URL</label>
+                                            <input value={formData.profile_photo || ''} onChange={(e) => setFormData((p:any) => ({ ...p, profile_photo: e.target.value }))} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm" placeholder="https://..." />
+                                        </div>
+                                    </div>
+                                )}
 
-                                                    </select>
-                                                </div>
-                                            </div>
-                                            <div className="grid grid-cols-2 gap-4">
-                                                <div>
-                                                    <label className="text-xs text-muted-foreground mb-1 block">Assigned Hub</label>
-                                                    <select value={formData.hub_id || ''} onChange={(e) => setFormData((p:any) => ({ ...p, hub_id: e.target.value }))} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm">
-                                                        <option value="">None (Free Roam)</option>
-                                                        {hubs.map(h => <option key={h.id} value={h.id}>{h.name}</option>)}
-                                                    </select>
-                                                </div>
-                                                <div>
-                                                    <label className="text-xs text-muted-foreground mb-1 block">Profile Photo URL</label>
-                                                    <input value={formData.profile_photo || ''} onChange={(e) => setFormData((p:any) => ({ ...p, profile_photo: e.target.value }))} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm" placeholder="https://..." />
-                                                </div>
+                                {activeTab === 'services' && (
+                                    <div className="space-y-6">
+                                        <div>
+                                            <label className="text-xs text-muted-foreground mb-2 block font-bold uppercase tracking-wider">Primary Service *</label>
+                                            <select
+                                                required
+                                                value={formData.sub_service_id}
+                                                onChange={(e) => setFormData((p: any) => ({
+                                                    ...p,
+                                                    sub_service_id: e.target.value,
+                                                    other_sub_service_ids: (p.other_sub_service_ids || []).filter((id: string) => id !== e.target.value)
+                                                }))}
+                                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm"
+                                            >
+                                                <option value="">Select Primary Service</option>
+                                                {subServices.map(s => (
+                                                    <option key={s.id} value={s.id}>{s.name} — {s.service_name}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label className="text-xs text-muted-foreground mb-2 block font-bold uppercase tracking-wider">Additional Services</label>
+                                            <p className="text-xs text-muted-foreground mb-3">Caretaker will also be matched for these services.</p>
+                                            <div className="grid grid-cols-1 gap-2">
+                                                {subServices.filter(s => s.id !== formData.sub_service_id).map(s => {
+                                                    const checked = (formData.other_sub_service_ids || []).includes(s.id)
+                                                    return (
+                                                        <label key={s.id} className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${checked ? 'bg-primary/10 border-primary/40' : 'bg-white/5 border-white/10 hover:border-white/20'}`}>
+                                                            <div className={`w-5 h-5 rounded-md border flex items-center justify-center flex-shrink-0 transition-all ${checked ? 'bg-primary border-primary' : 'border-white/20'}`}>
+                                                                {checked && <Plus className="w-3 h-3 text-white" />}
+                                                            </div>
+                                                            <input type="checkbox" className="hidden" checked={checked} onChange={() => toggleAdditionalService(s.id)} />
+                                                            <div>
+                                                                <p className="text-sm font-medium">{s.name}</p>
+                                                                <p className="text-xs text-muted-foreground">{s.service_name}</p>
+                                                            </div>
+                                                        </label>
+                                                    )
+                                                })}
+                                                {subServices.filter(s => s.id !== formData.sub_service_id).length === 0 && (
+                                                    <p className="text-xs text-muted-foreground italic">Select a primary service first to see additional options.</p>
+                                                )}
                                             </div>
                                         </div>
                                     </div>
@@ -389,30 +437,38 @@ export default function RidersPage() {
                                     <td className="px-6 py-5">
                                         <div className="space-y-1.5 flex flex-col items-start">
                                             {editingSpecialization === rider.id ? (
-                                                <select 
+                                                <select
                                                     autoFocus
                                                     className="bg-[#1A1A1A] border border-primary/40 rounded-lg text-[10px] font-bold px-2 py-1 focus:outline-none focus:ring-1 focus:ring-primary"
-                                                    value={rider.service}
+                                                    defaultValue={rider.sub_service_id || ''}
                                                     onBlur={() => setEditingSpecialization(null)}
-                                                    onChange={(e) => updateSpecialization(rider.id, e.target.value)}
+                                                    onChange={(e) => updatePrimaryService(rider.id, e.target.value)}
                                                 >
-                                                    <option value={rider.service}>{rider.service?.replace('_', ' ')}</option>
-                                                    {serviceEnums.filter(e => e !== rider.service).map(e => (
-                                                        <option key={e} value={e}>{e.replace('_', ' ')}</option>
+                                                    <option value="">Select Service</option>
+                                                    {subServices.map((s: any) => (
+                                                        <option key={s.id} value={s.id}>{s.name}</option>
                                                     ))}
-
                                                 </select>
                                             ) : (
-                                                <button 
+                                                <button
                                                     onClick={() => setEditingSpecialization(rider.id)}
                                                     className="px-2 py-0.5 rounded-lg text-[10px] font-bold bg-primary/10 text-primary border border-primary/20 uppercase tracking-tighter hover:bg-primary/20 transition-all cursor-pointer"
                                                 >
-                                                    {rider.service?.replace('_', ' ')}
+                                                    {rider.sub_service_id ? getSubServiceName(rider.sub_service_id) : 'Assign Service'}
                                                 </button>
+                                            )}
+                                            {(rider.other_sub_service_ids || []).length > 0 && (
+                                                <div className="flex flex-wrap gap-1">
+                                                    {(rider.other_sub_service_ids as string[]).map((id: string) => (
+                                                        <span key={id} className="px-1.5 py-0.5 rounded-md bg-white/5 text-white/60 text-[9px] font-medium border border-white/10">
+                                                            {getSubServiceName(id)}
+                                                        </span>
+                                                    ))}
+                                                </div>
                                             )}
                                             {rider.hub_id && (
                                                 <div className="flex items-center gap-1 text-[11px] text-muted-foreground">
-                                                    <MapPin className="w-3 h-3" /> {hubs.find(h => h.id === rider.hub_id)?.name || 'Matching Hub'}
+                                                    <MapPin className="w-3 h-3" /> {hubs.find((h: any) => h.id === rider.hub_id)?.name || 'Hub'}
                                                 </div>
                                             )}
                                         </div>
