@@ -218,14 +218,8 @@ export default function ServicesPage() {
                                 </div>
                                 <div>
                                     <label className="text-xs text-muted-foreground mb-1 block">Icon</label>
-                                    <select value={formData.icon} onChange={(e) => setFormData(p => ({ ...p, icon: e.target.value }))} className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2.5 text-sm">
-                                        <option value="">Select icon...</option>
-                                        <option value="child_care">Child Care</option><option value="nightlight">Night / Moon</option>
-                                        <option value="spa">Spa / Massage</option><option value="science">Science / STEM</option>
-                                        <option value="pregnant_woman">Postpartum</option><option value="elderly">Elderly</option>
-                                        <option value="pets">Pets</option><option value="favorite">Heart</option>
-                                        <option value="home">Home</option>
-                                    </select>
+                                    <input value={formData.icon} onChange={(e) => setFormData(p => ({ ...p, icon: e.target.value }))} className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2.5 text-sm" placeholder="https://cdn.example.com/icon.png or child_care" />
+                                    <p className="text-xs text-muted-foreground mt-1">Use a square image URL (1:1 ratio) or a Material icon name</p>
                                 </div>
                                 <div className="md:col-span-3">
                                     <label className="text-xs text-muted-foreground mb-1 block">Description</label>

@@ -1,6 +1,6 @@
 'use client'
 
-import { Shield, LayoutDashboard, Package, Users, Bike, Map, ListTree, Ticket, LogOut, Menu, X } from 'lucide-react'
+import { Shield, LayoutDashboard, Package, Users, Bike, Map, ListTree, Ticket, ImageIcon, LogOut, Menu, X } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useState } from 'react'
@@ -14,6 +14,7 @@ const navItems = [
     { href: '/hubs', label: 'Hubs', icon: Map },
     { href: '/services', label: 'Services', icon: ListTree },
     { href: '/coupons', label: 'Coupons', icon: Ticket },
+    { href: '/banners', label: 'Banners', icon: ImageIcon },
 ]
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
