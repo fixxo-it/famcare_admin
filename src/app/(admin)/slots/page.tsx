@@ -177,7 +177,7 @@ export default function SlotsPage() {
                 <div>
                     <h1 className="text-2xl font-bold">Slot Management</h1>
                     <p className="text-sm text-muted-foreground mt-1">
-                        Manage time slots and view live booking counts per day.
+                        Time slots apply to <span className="text-white font-medium">every day</span> — only the booking counts change per day. Use the date picker to see how full each slot is on a specific date.
                     </p>
                 </div>
                 <div className="flex items-center gap-2">
