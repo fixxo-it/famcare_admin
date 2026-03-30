@@ -19,6 +19,8 @@ export default function ServicesPage() {
     const [expandedSubId, setExpandedSubId] = useState<string | null>(null)
     const [formData, setFormData] = useState({ name: '', description: '', price: 0, discount_price: '', duration: '', icon: '', price_unit: 'hr', currency: 'INR', service_id: '' })
     const [tierData, setTierData] = useState({ hours: '', label: '', price: '', discount_price: '', sub_service_id: '' })
+    const [tierUnit, setTierUnit] = useState<'hours' | 'minutes'>('hours')
+    const [tierDuration, setTierDuration] = useState('')
     const [submitting, setSubmitting] = useState(false)
 
     const fetchServices = useCallback(async () => {
@@ -90,7 +92,7 @@ export default function ServicesPage() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     ...(!editItem && { sub_service_id: tierData.sub_service_id }),
-                    hours: parseFloat(tierData.hours) || 0,
+                    hours: tierUnit === 'minutes' ? (parseFloat(tierDuration) / 60) : (parseFloat(tierDuration) || 0),
                     label: tierData.label,
                     price: parseFloat(tierData.price) || 0,
                     discount_price: tierData.discount_price ? parseFloat(tierData.discount_price) : null,
@@ -118,6 +120,20 @@ export default function ServicesPage() {
         setEditItem(null)
         setFormData({ name: '', description: '', price: 0, discount_price: '', duration: '', icon: '', price_unit: 'hr', currency: 'INR', service_id: '' })
         setTierData({ hours: '', label: '', price: '', discount_price: '', sub_service_id: '' })
+        setTierUnit('hours')
+        setTierDuration('')
+    }
+
+    const autoTierLabel = (val: string, unit: 'hours' | 'minutes') => {
+        const num = parseFloat(val)
+        if (!num || isNaN(num)) return ''
+        if (unit === 'minutes') return `${num} mins`
+        return num === 1 ? '1 hr' : `${num} hrs`
+    }
+
+    const handleTierDurationChange = (val: string, unit: 'hours' | 'minutes') => {
+        setTierDuration(val)
+        setTierData(p => ({ ...p, label: autoTierLabel(val, unit) }))
     }
 
     const startEditService = (service: any) => {
@@ -141,6 +157,11 @@ export default function ServicesPage() {
     }
     const startEditTier = (tier: any) => {
         setEditItem(tier)
+        const isMinutes = tier.hours > 0 && tier.hours < 1
+        const unit: 'hours' | 'minutes' = isMinutes ? 'minutes' : 'hours'
+        const duration = isMinutes ? String(Math.round(tier.hours * 60)) : String(tier.hours)
+        setTierUnit(unit)
+        setTierDuration(duration)
         setTierData({ hours: String(tier.hours), label: tier.label, price: String(tier.price), discount_price: tier.discount_price ? String(tier.discount_price) : '', sub_service_id: tier.sub_service_id })
         setShowTierForm(true)
     }
@@ -243,12 +264,18 @@ export default function ServicesPage() {
                             </div>
                             <form onSubmit={handleTierSubmit} className="grid grid-cols-1 md:grid-cols-4 gap-4">
                                 <div>
-                                    <label className="text-xs text-muted-foreground mb-1 block">Hours</label>
-                                    <input required type="number" step="0.5" min="0.5" value={tierData.hours} onChange={(e) => setTierData(p => ({ ...p, hours: e.target.value }))} className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2.5 text-sm" placeholder="e.g. 1, 2, 3" />
+                                    <label className="text-xs text-muted-foreground mb-1 block">Duration</label>
+                                    <div className="flex gap-2">
+                                        <input required type="number" step={tierUnit === 'minutes' ? '5' : '0.5'} min={tierUnit === 'minutes' ? '5' : '0.5'} value={tierDuration} onChange={(e) => handleTierDurationChange(e.target.value, tierUnit)} className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2.5 text-sm" placeholder={tierUnit === 'minutes' ? 'e.g. 45' : 'e.g. 1, 2'} />
+                                        <select value={tierUnit} onChange={(e) => { const u = e.target.value as 'hours' | 'minutes'; setTierUnit(u); handleTierDurationChange(tierDuration, u) }} className="bg-white/5 border border-white/10 rounded-lg px-2 py-2.5 text-sm">
+                                            <option value="hours">hrs</option>
+                                            <option value="minutes">mins</option>
+                                        </select>
+                                    </div>
                                 </div>
                                 <div>
-                                    <label className="text-xs text-muted-foreground mb-1 block">Display Label</label>
-                                    <input required value={tierData.label} onChange={(e) => setTierData(p => ({ ...p, label: e.target.value }))} className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2.5 text-sm" placeholder="e.g. 1 hr, 2 hrs" />
+                                    <label className="text-xs text-muted-foreground mb-1 block">Display Label <span className="opacity-50">(auto-filled)</span></label>
+                                    <input required value={tierData.label} onChange={(e) => setTierData(p => ({ ...p, label: e.target.value }))} className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2.5 text-sm" placeholder="e.g. 1 hr, 45 mins" />
                                 </div>
                                 <div>
                                     <label className="text-xs text-muted-foreground mb-1 block">Price</label>
