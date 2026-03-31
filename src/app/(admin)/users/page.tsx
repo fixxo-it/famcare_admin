@@ -66,17 +66,42 @@ export default function UsersPage() {
     const saveEdits = async (userId: string) => {
         setSaving(true)
         try {
+            const payload = {
+                name: editForm.name,
+                phone: editForm.phone,
+                city: editForm.city,
+                area: editForm.area,
+                address: editForm.address,
+                pincode: editForm.pincode,
+                wallet_balance: Number(editForm.wallet_balance) || 0,
+                referral_code: editForm.referral_code,
+                is_profile_complete: Boolean(editForm.is_profile_complete),
+                selected_services: typeof editForm.selected_services === 'string' 
+                    ? editForm.selected_services.split(',').map((s: string) => s.trim()).filter(Boolean) 
+                    : editForm.selected_services,
+                relationship: editForm.relationship,
+                gender: editForm.gender,
+                dob: editForm.dob,
+                child_name: editForm.child_name,
+                child_dob: editForm.child_dob,
+                child_gender: editForm.child_gender,
+                child_special_needs: editForm.child_special_needs,
+                elderly_name: editForm.elderly_name,
+                elderly_age: Number(editForm.elderly_age) || null,
+                elderly_care_needs: editForm.elderly_care_needs,
+                elderly_medical_support: Boolean(editForm.elderly_medical_support),
+                elderly_mobility_assistance: Boolean(editForm.elderly_mobility_assistance),
+                elderly_special_instructions: editForm.elderly_special_instructions,
+                pet_name: editForm.pet_name,
+                pet_age: Number(editForm.pet_age) || null,
+                pet_breed: editForm.pet_breed,
+                pet_special_needs: editForm.pet_special_needs
+            };
+
             const res = await fetch(`${API_BASE}/admin/users/${userId}`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    name: editForm.name,
-                    phone: editForm.phone,
-                    city: editForm.city,
-                    area: editForm.area,
-                    wallet_balance: Number(editForm.wallet_balance) || 0,
-                    referral_code: editForm.referral_code
-                })
+                body: JSON.stringify(payload)
             })
             if (res.ok) {
                 const updated = await res.json()
@@ -191,8 +216,8 @@ export default function UsersPage() {
                                         <div className="p-6 ml-14 grid grid-cols-1 lg:grid-cols-2 gap-8 border-t border-white/5">
                                             
                                             {/* Profile Editor Side */}
-                                            <div>
-                                                <div className="flex items-center justify-between mb-4">
+                                            <div className="max-h-[600px] overflow-y-auto pr-4 custom-scrollbar">
+                                                <div className="flex items-center justify-between mb-4 sticky top-0 bg-background/80 backdrop-blur-md z-10 py-2 border-b border-white/5">
                                                     <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">
                                                         User Profile
                                                     </p>
@@ -222,79 +247,191 @@ export default function UsersPage() {
                                                     )}
                                                 </div>
 
-                                                <div className="space-y-4">
-                                                    <div className="grid grid-cols-2 gap-4">
-                                                        <div>
-                                                            <label className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1 block">Full Name</label>
-                                                            {editMode === user.id ? (
-                                                                <input 
-                                                                    value={editForm.name || ''} 
-                                                                    onChange={e => setEditForm({...editForm, name: e.target.value})}
-                                                                    className="w-full bg-white/5 border border-white/10 rounded px-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-primary/50"
-                                                                />
-                                                            ) : <p className="text-sm font-medium">{user.name || '—'}</p>}
-                                                        </div>
-                                                        <div>
-                                                            <label className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1 block">Phone Number</label>
-                                                            {editMode === user.id ? (
-                                                                <input 
-                                                                    value={editForm.phone || ''} 
-                                                                    onChange={e => setEditForm({...editForm, phone: e.target.value})}
-                                                                    className="w-full bg-white/5 border border-white/10 rounded px-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-primary/50"
-                                                                />
-                                                            ) : <p className="text-sm font-medium">{user.phone}</p>}
+                                                <div className="space-y-6 pb-8">
+                                                    {/* Section 1: Basic & System */}
+                                                    <div className="space-y-4">
+                                                        <h4 className="text-sm font-bold text-primary">Basic Info & Wallet</h4>
+                                                        <div className="grid grid-cols-2 gap-4">
+                                                            <div>
+                                                                <label className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1 block">Full Name</label>
+                                                                {editMode === user.id ? (
+                                                                    <input value={editForm.name || ''} onChange={e => setEditForm({...editForm, name: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded px-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-primary/50" />
+                                                                ) : <p className="text-sm font-medium">{user.name || '—'}</p>}
+                                                            </div>
+                                                            <div>
+                                                                <label className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1 block">Phone Number</label>
+                                                                {editMode === user.id ? (
+                                                                    <input value={editForm.phone || ''} onChange={e => setEditForm({...editForm, phone: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded px-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-primary/50" />
+                                                                ) : <p className="text-sm font-medium">{user.phone}</p>}
+                                                            </div>
+                                                            <div>
+                                                                <label className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1 block">City</label>
+                                                                {editMode === user.id ? (
+                                                                    <input value={editForm.city || ''} onChange={e => setEditForm({...editForm, city: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded px-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-primary/50" />
+                                                                ) : <p className="text-sm font-medium">{user.city || '—'}</p>}
+                                                            </div>
+                                                            <div>
+                                                                <label className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1 block">Area & Pincode</label>
+                                                                {editMode === user.id ? (
+                                                                    <div className="flex gap-2">
+                                                                        <input value={editForm.area || ''} placeholder="Area" onChange={e => setEditForm({...editForm, area: e.target.value})} className="w-2/3 bg-white/5 border border-white/10 rounded px-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-primary/50" />
+                                                                        <input value={editForm.pincode || ''} placeholder="Pin" onChange={e => setEditForm({...editForm, pincode: e.target.value})} className="w-1/3 bg-white/5 border border-white/10 rounded px-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-primary/50" />
+                                                                    </div>
+                                                                ) : <p className="text-sm font-medium">{user.area || '—'} {user.pincode ? `(${user.pincode})` : ''}</p>}
+                                                            </div>
+                                                            <div className="col-span-2">
+                                                                <label className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1 block">Full Address</label>
+                                                                {editMode === user.id ? (
+                                                                    <textarea value={editForm.address || ''} onChange={e => setEditForm({...editForm, address: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded px-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-primary/50 resize-none h-16" />
+                                                                ) : <p className="text-sm font-medium text-muted-foreground">{user.address || '—'}</p>}
+                                                            </div>
+                                                            <div>
+                                                                <label className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1 block">Wallet Balance (Coins)</label>
+                                                                {editMode === user.id ? (
+                                                                    <input type="number" value={editForm.wallet_balance || 0} onChange={e => setEditForm({...editForm, wallet_balance: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded px-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-primary/50 text-yellow-400 font-bold" />
+                                                                ) : <p className="text-sm font-bold text-yellow-500">{user.wallet_balance || 0}</p>}
+                                                            </div>
+                                                            <div>
+                                                                <label className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1 block">Referral Code</label>
+                                                                {editMode === user.id ? (
+                                                                    <input value={editForm.referral_code || ''} onChange={e => setEditForm({...editForm, referral_code: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded px-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-primary/50 uppercase" />
+                                                                ) : <p className="text-sm font-medium text-purple-400">{user.referral_code || '—'}</p>}
+                                                            </div>
                                                         </div>
                                                     </div>
 
-                                                    <div className="grid grid-cols-2 gap-4">
-                                                        <div>
-                                                            <label className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1 block">City</label>
-                                                            {editMode === user.id ? (
-                                                                <input 
-                                                                    value={editForm.city || ''} 
-                                                                    onChange={e => setEditForm({...editForm, city: e.target.value})}
-                                                                    className="w-full bg-white/5 border border-white/10 rounded px-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-primary/50"
-                                                                />
-                                                            ) : <p className="text-sm font-medium">{user.city || '—'}</p>}
-                                                        </div>
-                                                        <div>
-                                                            <label className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1 block">Area / Neighbourhood</label>
-                                                            {editMode === user.id ? (
-                                                                <input 
-                                                                    value={editForm.area || ''} 
-                                                                    onChange={e => setEditForm({...editForm, area: e.target.value})}
-                                                                    className="w-full bg-white/5 border border-white/10 rounded px-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-primary/50"
-                                                                />
-                                                            ) : <p className="text-sm font-medium">{user.area || '—'}</p>}
+                                                    {/* Section 2: Onboarding & Parents */}
+                                                    <div className="space-y-4 pt-4 border-t border-white/5">
+                                                        <h4 className="text-sm font-bold text-primary">Guardian & Services</h4>
+                                                        <div className="grid grid-cols-2 gap-4">
+                                                            <div className="col-span-2 flex items-center gap-3">
+                                                                <label className="text-[10px] uppercase tracking-wider text-muted-foreground block">Profile Complete?</label>
+                                                                {editMode === user.id ? (
+                                                                    <input type="checkbox" checked={editForm.is_profile_complete || false} onChange={e => setEditForm({...editForm, is_profile_complete: e.target.checked})} className="w-4 h-4 accent-primary" />
+                                                                ) : <p className="text-sm font-medium">{user.is_profile_complete ? "Yes" : "No"}</p>}
+                                                            </div>
+                                                            <div className="col-span-2">
+                                                                <label className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1 block">Selected Services (comma separated)</label>
+                                                                {editMode === user.id ? (
+                                                                    <input value={Array.isArray(editForm.selected_services) ? editForm.selected_services.join(', ') : editForm.selected_services || ''} onChange={e => setEditForm({...editForm, selected_services: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded px-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-primary/50" />
+                                                                ) : <p className="text-sm font-medium">{user.selected_services?.join(', ') || '—'}</p>}
+                                                            </div>
+                                                            <div>
+                                                                <label className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1 block">Relationship</label>
+                                                                {editMode === user.id ? (
+                                                                    <input value={editForm.relationship || ''} onChange={e => setEditForm({...editForm, relationship: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded px-3 py-1.5 text-sm outline-none" />
+                                                                ) : <p className="text-sm font-medium">{user.relationship || '—'}</p>}
+                                                            </div>
+                                                            <div>
+                                                                <label className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1 block">Guardian DOB</label>
+                                                                {editMode === user.id ? (
+                                                                    <input value={editForm.dob || ''} onChange={e => setEditForm({...editForm, dob: e.target.value})} placeholder="YYYY-MM-DD" className="w-full bg-white/5 border border-white/10 rounded px-3 py-1.5 text-sm outline-none" />
+                                                                ) : <p className="text-sm font-medium">{user.dob || '—'}</p>}
+                                                            </div>
                                                         </div>
                                                     </div>
 
-                                                    <div className="grid grid-cols-2 gap-4">
-                                                        <div>
-                                                            <label className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1 block">Wallet Balance (Coins)</label>
-                                                            {editMode === user.id ? (
-                                                                <input 
-                                                                    type="number"
-                                                                    value={editForm.wallet_balance || 0} 
-                                                                    onChange={e => setEditForm({...editForm, wallet_balance: e.target.value})}
-                                                                    className="w-full bg-white/5 border border-white/10 rounded px-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-primary/50 text-yellow-400 font-bold"
-                                                                />
-                                                            ) : <p className="text-sm font-bold text-yellow-500">{user.wallet_balance || 0}</p>}
-                                                        </div>
-                                                        <div>
-                                                            <label className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1 block">Referral Code</label>
-                                                            {editMode === user.id ? (
-                                                                <input 
-                                                                    value={editForm.referral_code || ''} 
-                                                                    onChange={e => setEditForm({...editForm, referral_code: e.target.value})}
-                                                                    className="w-full bg-white/5 border border-white/10 rounded px-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-primary/50 uppercase"
-                                                                />
-                                                            ) : <p className="text-sm font-medium text-purple-400">{user.referral_code || '—'}</p>}
+                                                    {/* Section 3: Child Info */}
+                                                    <div className="space-y-4 pt-4 border-t border-white/5">
+                                                        <h4 className="text-sm font-bold text-blue-400">Child Care Info</h4>
+                                                        <div className="grid grid-cols-2 gap-4">
+                                                            <div>
+                                                                <label className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1 block">Child Name</label>
+                                                                {editMode === user.id ? (
+                                                                    <input value={editForm.child_name || ''} onChange={e => setEditForm({...editForm, child_name: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded px-3 py-1.5 text-sm outline-none" />
+                                                                ) : <p className="text-sm font-medium">{user.child_name || '—'}</p>}
+                                                            </div>
+                                                            <div>
+                                                                <label className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1 block">Child DOB</label>
+                                                                {editMode === user.id ? (
+                                                                    <input value={editForm.child_dob || ''} onChange={e => setEditForm({...editForm, child_dob: e.target.value})} placeholder="YYYY-MM-DD" className="w-full bg-white/5 border border-white/10 rounded px-3 py-1.5 text-sm outline-none" />
+                                                                ) : <p className="text-sm font-medium">{user.child_dob || '—'}</p>}
+                                                            </div>
+                                                            <div className="col-span-2">
+                                                                <label className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1 block">Special Needs</label>
+                                                                {editMode === user.id ? (
+                                                                    <textarea value={editForm.child_special_needs || ''} onChange={e => setEditForm({...editForm, child_special_needs: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded px-3 py-1.5 text-sm outline-none h-12 resize-none" />
+                                                                ) : <p className="text-sm font-medium text-muted-foreground">{user.child_special_needs || '—'}</p>}
+                                                            </div>
                                                         </div>
                                                     </div>
-                                                    
+
+                                                    {/* Section 4: Elderly Info */}
+                                                    <div className="space-y-4 pt-4 border-t border-white/5">
+                                                        <h4 className="text-sm font-bold text-orange-400">Elderly Care Info</h4>
+                                                        <div className="grid grid-cols-2 gap-4">
+                                                            <div>
+                                                                <label className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1 block">Elderly Name</label>
+                                                                {editMode === user.id ? (
+                                                                    <input value={editForm.elderly_name || ''} onChange={e => setEditForm({...editForm, elderly_name: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded px-3 py-1.5 text-sm outline-none" />
+                                                                ) : <p className="text-sm font-medium">{user.elderly_name || '—'}</p>}
+                                                            </div>
+                                                            <div>
+                                                                <label className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1 block">Age</label>
+                                                                {editMode === user.id ? (
+                                                                    <input type="number" value={editForm.elderly_age || ''} onChange={e => setEditForm({...editForm, elderly_age: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded px-3 py-1.5 text-sm outline-none" />
+                                                                ) : <p className="text-sm font-medium">{user.elderly_age || '—'}</p>}
+                                                            </div>
+                                                            <div className="col-span-2">
+                                                                <label className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1 block">Care Needs</label>
+                                                                {editMode === user.id ? (
+                                                                    <input value={editForm.elderly_care_needs || ''} onChange={e => setEditForm({...editForm, elderly_care_needs: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded px-3 py-1.5 text-sm outline-none" />
+                                                                ) : <p className="text-sm font-medium text-muted-foreground">{user.elderly_care_needs || '—'}</p>}
+                                                            </div>
+                                                            <div className="flex items-center gap-2">
+                                                                {editMode === user.id ? (
+                                                                    <input type="checkbox" checked={editForm.elderly_medical_support || false} onChange={e => setEditForm({...editForm, elderly_medical_support: e.target.checked})} className="w-4 h-4 accent-primary" />
+                                                                ) : <div className={`w-3 h-3 rounded-full ${user.elderly_medical_support ? 'bg-success' : 'bg-muted-foreground/30'}`} />}
+                                                                <span className="text-xs">Medical Support</span>
+                                                            </div>
+                                                            <div className="flex items-center gap-2">
+                                                                {editMode === user.id ? (
+                                                                    <input type="checkbox" checked={editForm.elderly_mobility_assistance || false} onChange={e => setEditForm({...editForm, elderly_mobility_assistance: e.target.checked})} className="w-4 h-4 accent-primary" />
+                                                                ) : <div className={`w-3 h-3 rounded-full ${user.elderly_mobility_assistance ? 'bg-success' : 'bg-muted-foreground/30'}`} />}
+                                                                <span className="text-xs">Mobility Assist</span>
+                                                            </div>
+                                                            <div className="col-span-2">
+                                                                <label className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1 block">Special Instructions</label>
+                                                                {editMode === user.id ? (
+                                                                    <textarea value={editForm.elderly_special_instructions || ''} onChange={e => setEditForm({...editForm, elderly_special_instructions: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded px-3 py-1.5 text-sm outline-none h-12 resize-none" />
+                                                                ) : <p className="text-sm font-medium text-muted-foreground">{user.elderly_special_instructions || '—'}</p>}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Section 5: Pet Info */}
+                                                    <div className="space-y-4 pt-4 border-t border-white/5">
+                                                        <h4 className="text-sm font-bold text-yellow-600">Pet Care Info</h4>
+                                                        <div className="grid grid-cols-2 gap-4">
+                                                            <div>
+                                                                <label className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1 block">Pet Name</label>
+                                                                {editMode === user.id ? (
+                                                                    <input value={editForm.pet_name || ''} onChange={e => setEditForm({...editForm, pet_name: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded px-3 py-1.5 text-sm outline-none" />
+                                                                ) : <p className="text-sm font-medium">{user.pet_name || '—'}</p>}
+                                                            </div>
+                                                            <div>
+                                                                <label className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1 block">Breed</label>
+                                                                {editMode === user.id ? (
+                                                                    <input value={editForm.pet_breed || ''} onChange={e => setEditForm({...editForm, pet_breed: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded px-3 py-1.5 text-sm outline-none" />
+                                                                ) : <p className="text-sm font-medium">{user.pet_breed || '—'}</p>}
+                                                            </div>
+                                                            <div>
+                                                                <label className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1 block">Age</label>
+                                                                {editMode === user.id ? (
+                                                                    <input type="number" value={editForm.pet_age || ''} onChange={e => setEditForm({...editForm, pet_age: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded px-3 py-1.5 text-sm outline-none" />
+                                                                ) : <p className="text-sm font-medium">{user.pet_age || '—'}</p>}
+                                                            </div>
+                                                            <div className="col-span-2">
+                                                                <label className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1 block">Special Needs</label>
+                                                                {editMode === user.id ? (
+                                                                    <input value={editForm.pet_special_needs || ''} onChange={e => setEditForm({...editForm, pet_special_needs: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded px-3 py-1.5 text-sm outline-none" />
+                                                                ) : <p className="text-sm font-medium text-muted-foreground">{user.pet_special_needs || '—'}</p>}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
                                                     {!editMode && (
-                                                        <div className="grid grid-cols-2 gap-4 pt-2 border-t border-white/5 mt-4">
+                                                        <div className="grid grid-cols-2 gap-4 pt-4 border-t border-white/5 mt-4">
                                                             <div>
                                                                 <label className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1 block">Joined Date</label>
                                                                 <p className="text-sm text-muted-foreground">{new Date(user.created_at).toLocaleString()}</p>
