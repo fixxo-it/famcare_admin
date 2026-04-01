@@ -109,7 +109,12 @@ export default function ServicesPage() {
             sub: `${API_BASE}/services/sub/${id}`,
             tier: `${API_BASE}/services/tiers/${id}`,
         }
-        await fetch(urls[type], { method: 'DELETE' })
+        const res = await fetch(urls[type], { method: 'DELETE' })
+        if (!res.ok) {
+            const err = await res.json().catch(() => ({}))
+            alert(`Delete failed: ${err.detail ?? res.statusText}`)
+            return
+        }
         fetchServices()
     }
 
@@ -267,9 +272,9 @@ export default function ServicesPage() {
                                     <label className="text-xs text-muted-foreground mb-1 block">Duration</label>
                                     <div className="flex gap-2">
                                         <input required type="number" step={tierUnit === 'minutes' ? '5' : '0.5'} min={tierUnit === 'minutes' ? '5' : '0.5'} value={tierDuration} onChange={(e) => handleTierDurationChange(e.target.value, tierUnit)} className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2.5 text-sm" placeholder={tierUnit === 'minutes' ? 'e.g. 45' : 'e.g. 1, 2'} />
-                                        <select value={tierUnit} onChange={(e) => { const u = e.target.value as 'hours' | 'minutes'; setTierUnit(u); handleTierDurationChange(tierDuration, u) }} className="bg-white/5 border border-white/10 rounded-lg px-2 py-2.5 text-sm">
-                                            <option value="hours">hrs</option>
-                                            <option value="minutes">mins</option>
+                                        <select value={tierUnit} onChange={(e) => { const u = e.target.value as 'hours' | 'minutes'; setTierUnit(u); handleTierDurationChange(tierDuration, u) }} className="bg-[#1e1b2e] border border-white/10 rounded-lg px-2 py-2.5 text-sm text-white">
+                                            <option value="hours" className="bg-[#1e1b2e]">hrs</option>
+                                            <option value="minutes" className="bg-[#1e1b2e]">mins</option>
                                         </select>
                                     </div>
                                 </div>
