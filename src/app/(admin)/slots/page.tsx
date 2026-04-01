@@ -52,6 +52,8 @@ export default function SlotsPage() {
     const [noRiders, setNoRiders] = useState(false)
     const [showAddForm, setShowAddForm] = useState(false)
     const [toggling, setToggling] = useState<string | null>(null)
+    const [togglingPeriod, setTogglingPeriod] = useState<string | null>(null)
+    const [togglingAll, setTogglingAll] = useState(false)
     const [deleting, setDeleting] = useState<string | null>(null)
     const [savingMax, setSavingMax] = useState<string | null>(null)
     const [localMax, setLocalMax] = useState<Record<string, number>>({})
@@ -131,6 +133,43 @@ export default function SlotsPage() {
             }
         } finally {
             setDeleting(null)
+        }
+    }
+
+    const togglePeriod = async (period: string, enable: boolean) => {
+        setTogglingPeriod(period)
+        const targets = grouped[period]
+        setSlots(prev => prev.map(s => periodOf(s.time_slot) === period ? { ...s, is_enabled: enable } : s))
+        try {
+            await Promise.all(targets.map(s =>
+                fetch(`${API_BASE}/slots/configs/${encodeURIComponent(s.time_slot)}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ max_slots: s.max_slots, is_enabled: enable }),
+                })
+            ))
+        } catch {
+            await fetchOverview(date)
+        } finally {
+            setTogglingPeriod(null)
+        }
+    }
+
+    const toggleAll = async (enable: boolean) => {
+        setTogglingAll(true)
+        setSlots(prev => prev.map(s => ({ ...s, is_enabled: enable })))
+        try {
+            await Promise.all(slots.map(s =>
+                fetch(`${API_BASE}/slots/configs/${encodeURIComponent(s.time_slot)}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ max_slots: s.max_slots, is_enabled: enable }),
+                })
+            ))
+        } catch {
+            await fetchOverview(date)
+        } finally {
+            setTogglingAll(false)
         }
     }
 
@@ -225,6 +264,33 @@ export default function SlotsPage() {
                 </div>
             )}
 
+            {/* Master toggle */}
+            {slots.length > 0 && (
+                <div className="flex items-center justify-between px-4 py-3 rounded-xl bg-white/5 border border-white/10">
+                    <div>
+                        <p className="text-sm font-semibold">All Slots</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">{enabledCount} of {slots.length} enabled</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <button
+                            onClick={() => toggleAll(false)}
+                            disabled={togglingAll || enabledCount === 0}
+                            className="px-3 py-1.5 text-xs rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 disabled:opacity-40 transition-colors font-medium"
+                        >
+                            Disable All
+                        </button>
+                        <button
+                            onClick={() => toggleAll(true)}
+                            disabled={togglingAll || enabledCount === slots.length}
+                            className="px-3 py-1.5 text-xs rounded-lg bg-green-500/10 text-green-400 hover:bg-green-500/20 disabled:opacity-40 transition-colors font-medium"
+                        >
+                            Enable All
+                        </button>
+                        {togglingAll && <RefreshCw className="w-4 h-4 animate-spin text-muted-foreground" />}
+                    </div>
+                </div>
+            )}
+
             {/* Add slot form */}
             <AnimatePresence>
                 {showAddForm && (
@@ -293,10 +359,29 @@ export default function SlotsPage() {
                 <div className="space-y-6">
                     {activePeriods.map(period => (
                         <div key={period}>
-                            <div className="flex items-center gap-2 mb-3">
-                                <span className="text-lg">{PERIOD_ICONS[period]}</span>
-                                <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">{period}</h2>
-                                <span className="text-xs text-muted-foreground/50">{grouped[period].length} slot{grouped[period].length !== 1 ? 's' : ''}</span>
+                            <div className="flex items-center justify-between mb-3">
+                                <div className="flex items-center gap-2">
+                                    <span className="text-lg">{PERIOD_ICONS[period]}</span>
+                                    <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">{period}</h2>
+                                    <span className="text-xs text-muted-foreground/50">{grouped[period].length} slot{grouped[period].length !== 1 ? 's' : ''}</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    {togglingPeriod === period && <RefreshCw className="w-3.5 h-3.5 animate-spin text-muted-foreground" />}
+                                    <button
+                                        onClick={() => togglePeriod(period, false)}
+                                        disabled={togglingPeriod === period || grouped[period].every(s => !s.is_enabled)}
+                                        className="px-2.5 py-1 text-xs rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 disabled:opacity-40 transition-colors font-medium"
+                                    >
+                                        Disable
+                                    </button>
+                                    <button
+                                        onClick={() => togglePeriod(period, true)}
+                                        disabled={togglingPeriod === period || grouped[period].every(s => s.is_enabled)}
+                                        className="px-2.5 py-1 text-xs rounded-lg bg-green-500/10 text-green-400 hover:bg-green-500/20 disabled:opacity-40 transition-colors font-medium"
+                                    >
+                                        Enable
+                                    </button>
+                                </div>
                             </div>
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                                 {grouped[period].map((slot, i) => {
