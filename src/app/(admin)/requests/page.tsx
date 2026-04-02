@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { Package, Clock, CheckCircle2, AlertCircle, Search, RefreshCw, UserPlus, Filter } from 'lucide-react'
+import { Package, Clock, CheckCircle2, AlertCircle, Search, RefreshCw, UserPlus, Filter, ShieldAlert } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api'
@@ -65,6 +65,22 @@ export default function RequestsPage() {
             }
         } catch (e: any) {
             alert(`Assignment failed: ${e.message}`)
+        }
+    }
+
+    const handleResolve = async (requestId: string) => {
+        if (!confirm('Are you sure you want to resolve/clear all assignments for this request? This will revert it to NEW.')) return
+        try {
+            const res = await fetch(`${API_BASE}/admin/requests/${requestId}/resolve`, {
+                method: 'POST',
+            })
+            if (res.ok) {
+                fetchData()
+            } else {
+                alert('Resolve failed')
+            }
+        } catch (e) {
+            alert('Resolve failed')
         }
     }
 
@@ -223,13 +239,24 @@ export default function RequestsPage() {
                                                         </button>
                                                     </div>
                                                 ) : (
-                                                    <button
-                                                        onClick={() => setAssigningId(req.id)}
-                                                        className="flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 text-primary text-xs rounded-lg hover:bg-primary/20 transition-colors border border-primary/20 ml-auto"
-                                                    >
-                                                        <UserPlus className="w-3.5 h-3.5" />
-                                                        Assign
-                                                    </button>
+                                                    <div className="flex items-center gap-2 justify-end">
+                                                        {(req.status === 'new' || req.status === 'scheduled') && (
+                                                            <button
+                                                                onClick={() => handleResolve(req.id)}
+                                                                title="Resolve / Reset Assignment"
+                                                                className="p-1.5 bg-red-400/10 text-red-400 text-xs rounded-lg hover:bg-red-400/20 transition-colors border border-red-400/20"
+                                                            >
+                                                                <ShieldAlert className="w-4 h-4" />
+                                                            </button>
+                                                        )}
+                                                        <button
+                                                            onClick={() => setAssigningId(req.id)}
+                                                            className="flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 text-primary text-xs rounded-lg hover:bg-primary/20 transition-colors border border-primary/20"
+                                                        >
+                                                            <UserPlus className="w-3.5 h-3.5" />
+                                                            Assign
+                                                        </button>
+                                                    </div>
                                                 )
                                             ) : (
                                                 <span className="text-xs text-muted-foreground">—</span>
