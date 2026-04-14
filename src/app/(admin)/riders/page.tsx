@@ -63,16 +63,34 @@ export default function RidersPage() {
 
     const handleSubmit = async (e: React.SyntheticEvent) => {
         e.preventDefault()
+        if (!formData.sub_service_id) {
+            setActiveTab('services')
+            alert('Please select a Primary Service before saving.')
+            return
+        }
         setSubmitting(true)
         try {
             const method = editRider ? 'PATCH' : 'POST'
             const url = editRider ? `${API_BASE}/admin/riders/${editRider.id}` : `${API_BASE}/admin/riders`
-            
-            await fetch(url, {
+
+            const raw = {
+                ...formData,
+                sub_service_id: formData.sub_service_id || null,
+                hub_id: formData.hub_id || null,
+            }
+            const payload = Object.fromEntries(
+                Object.entries(raw).filter(([, v]) => v !== '' && !Number.isNaN(v))
+            )
+            const res = await fetch(url, {
                 method,
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(formData),
+                body: JSON.stringify(payload),
             })
+            if (!res.ok) {
+                const detail = await res.text()
+                alert(`Save failed (${res.status}): ${detail}`)
+                return
+            }
             resetForm()
             fetchData()
         } catch (e) {
@@ -84,7 +102,12 @@ export default function RidersPage() {
 
     const handleDelete = async (id: string) => {
         if (!confirm('Are you sure you want to delete this rider?')) return
-        await fetch(`${API_BASE}/admin/riders/${id}`, { method: 'DELETE' })
+        const res = await fetch(`${API_BASE}/admin/riders/${id}`, { method: 'DELETE' })
+        if (!res.ok) {
+            const detail = await res.text()
+            alert(`Delete failed (${res.status}): ${detail}`)
+            return
+        }
         fetchData()
     }
 
