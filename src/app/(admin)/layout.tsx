@@ -1,10 +1,12 @@
 'use client'
 
-import { Shield, LayoutDashboard, Package, Users, Bike, Map, ListTree, Ticket, ImageIcon, Clock, LogOut, Menu, X } from 'lucide-react'
+import { Shield, LayoutDashboard, Package, Users, Bike, Map, ListTree, Ticket, ImageIcon, Clock, LogOut, Menu, X, Siren } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { AdminSocketProvider } from '@/components/AdminSocketProvider'
+import SOSAlertBanner from '@/components/SOSAlertBanner'
 
 const navItems = [
     { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -16,6 +18,7 @@ const navItems = [
     { href: '/coupons', label: 'Coupons', icon: Ticket },
     { href: '/banners', label: 'Banners', icon: ImageIcon },
     { href: '/slots', label: 'Slots', icon: Clock },
+    { href: '/sos', label: 'SOS', icon: Siren },
 ]
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -80,7 +83,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     )
 
     return (
+        <AdminSocketProvider>
         <div className="min-h-screen bg-background flex">
+            <SOSAlertBanner />
             {/* Desktop Sidebar */}
             <aside className="w-64 border-r border-white/5 bg-card/30 backdrop-blur-xl hidden md:flex flex-col fixed inset-y-0 left-0 z-30">
                 <NavContent />
@@ -137,5 +142,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 </div>
             </main>
         </div>
+        </AdminSocketProvider>
     )
 }
