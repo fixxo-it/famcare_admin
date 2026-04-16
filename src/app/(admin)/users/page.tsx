@@ -18,6 +18,7 @@ export default function UsersPage() {
     const [editMode, setEditMode] = useState<string | null>(null)
     const [editForm, setEditForm] = useState<any>({})
     const [saving, setSaving] = useState(false)
+    const [showDeleted, setShowDeleted] = useState(false)
 
     const fetchUsers = useCallback(async () => {
         try {
@@ -119,6 +120,7 @@ export default function UsersPage() {
     }
 
     const filtered = users.filter((u) => {
+        if (!showDeleted && u.is_deleted) return false
         if (!search) return true
         const q = search.toLowerCase()
         return u.phone?.includes(q) || u.name?.toLowerCase().includes(q) || u.city?.toLowerCase().includes(q) || u.referral_code?.toLowerCase().includes(q)
@@ -152,7 +154,7 @@ export default function UsersPage() {
 
             {/* Search + List */}
             <div className="glass rounded-2xl overflow-hidden border border-white/10">
-                <div className="p-4 border-b border-white/10 bg-white/[0.02]">
+                <div className="p-4 border-b border-white/10 bg-white/[0.02] flex items-center gap-4">
                     <div className="relative w-full md:w-96">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                         <input
@@ -162,6 +164,15 @@ export default function UsersPage() {
                             className="w-full bg-white/5 border border-white/10 rounded-lg pl-10 pr-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
                         />
                     </div>
+                    <label className="flex items-center gap-2 text-sm text-muted-foreground whitespace-nowrap cursor-pointer">
+                        <input
+                            type="checkbox"
+                            checked={showDeleted}
+                            onChange={e => setShowDeleted(e.target.checked)}
+                            className="rounded accent-red-500"
+                        />
+                        Show Deleted
+                    </label>
                 </div>
 
                 <div className="divide-y divide-white/5">
@@ -176,7 +187,14 @@ export default function UsersPage() {
                                         <span className="font-bold text-blue-400 text-sm">{user.name?.[0]?.toUpperCase() || '?'}</span>
                                     </div>
                                     <div>
-                                        <p className="font-medium text-sm text-white">{user.name || 'Unnamed'}</p>
+                                        <p className="font-medium text-sm text-white">
+                                            {user.name || 'Unnamed'}
+                                            {user.is_deleted && (
+                                                <span className="ml-2 px-2 py-0.5 text-xs font-medium bg-red-500/20 text-red-400 rounded-full">
+                                                    Deleted {user.deleted_at ? new Date(user.deleted_at).toLocaleDateString() : ''}
+                                                </span>
+                                            )}
+                                        </p>
                                         <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1">
                                             <span className="flex items-center gap-1">
                                                 <Phone className="w-3 h-3" /> {user.phone}
@@ -222,9 +240,10 @@ export default function UsersPage() {
                                                         User Profile
                                                     </p>
                                                     {editMode !== user.id ? (
-                                                        <button 
+                                                        <button
                                                             onClick={() => startEditing(user)}
-                                                            className="flex items-center gap-1.5 text-xs bg-white/5 px-3 py-1.5 rounded hover:bg-white/10 text-white transition-colors"
+                                                            disabled={user.is_deleted}
+                                                            className="flex items-center gap-1.5 text-xs bg-white/5 px-3 py-1.5 rounded hover:bg-white/10 text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:pointer-events-none"
                                                         >
                                                             <Edit2 className="w-3 h-3" /> Edit Profile
                                                         </button>
