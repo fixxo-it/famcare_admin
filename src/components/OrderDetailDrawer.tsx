@@ -1,11 +1,14 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
     X, User, Baby, HeartPulse, PawPrint, MapPin, CreditCard,
     Package, Clock, Phone, Wallet, CalendarDays, Bike, Star,
-    ListOrdered, CheckCircle2, AlertCircle
+    History, Hash, Gift
 } from 'lucide-react'
+
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api'
 
 export interface EnrichedRequest {
     id: string
@@ -30,11 +33,19 @@ export interface EnrichedRequest {
         id: string
         name?: string | null
         phone?: string | null
+        gender?: string | null
+        dob?: string | null
+        relationship?: string | null
         city?: string | null
         area?: string | null
         address?: string | null
         pincode?: string | null
         wallet_balance?: number | null
+        rating?: number | null
+        referral_code?: string | null
+        selected_services?: string[] | null
+        is_profile_complete?: boolean | null
+        registered_at?: string | null
         child_name?: string | null
         child_dob?: string | null
         child_gender?: string | null
@@ -128,12 +139,47 @@ export default function OrderDetailDrawer({ request, onClose }: Props) {
     )
 }
 
+interface EventLog {
+    id: string
+    request_id: string
+    actor: string
+    status: string
+    message?: string | null
+    created_at: string
+}
+
 function DrawerBody({ request, onClose }: { request: EnrichedRequest; onClose: () => void }) {
     const careType = inferCareType(request)
     const customer = request.customer
     const subService = request.sub_service
     const payment = request.payment
     const rider = request.rider
+    const details = request.details || {}
+    const duration = (details.duration as string | undefined) || null
+    const hours = (details.hours as string | undefined) || null
+    const isInstant = details.isInstant === true || details.isInstant === 'true'
+
+    const [logs, setLogs] = useState<EventLog[]>([])
+    const [logsLoading, setLogsLoading] = useState(true)
+
+    useEffect(() => {
+        let cancelled = false
+        setLogsLoading(true)
+        fetch(`${API_BASE}/admin/requests/${request.id}/logs`, { cache: 'no-store' })
+            .then((r) => (r.ok ? r.json() : []))
+            .then((data) => {
+                if (!cancelled) setLogs(Array.isArray(data) ? data : [])
+            })
+            .catch(() => {
+                if (!cancelled) setLogs([])
+            })
+            .finally(() => {
+                if (!cancelled) setLogsLoading(false)
+            })
+        return () => {
+            cancelled = true
+        }
+    }, [request.id])
 
     return (
         <>
@@ -173,6 +219,10 @@ function DrawerBody({ request, onClose }: { request: EnrichedRequest; onClose: (
                     {subService?.price != null && (
                         <Row label="Price" value={`₹${subService.price}`} />
                     )}
+                    {duration && <Row label="Duration" value={duration} />}
+                    {hours && duration !== hours && (
+                        <Row label="Hours" value={`${hours} hrs`} />
+                    )}
                     {request.scheduled_at ? (
                         <Row
                             label="Scheduled"
@@ -180,7 +230,7 @@ function DrawerBody({ request, onClose }: { request: EnrichedRequest; onClose: (
                             icon={<CalendarDays className="w-3.5 h-3.5" />}
                         />
                     ) : (
-                        <Row label="Type" value="Instant" />
+                        <Row label="Type" value={isInstant ? 'Instant' : '—'} pill={isInstant ? 'green' : 'muted'} />
                     )}
                 </Section>
 
@@ -193,6 +243,16 @@ function DrawerBody({ request, onClose }: { request: EnrichedRequest; onClose: (
                         icon={<Phone className="w-3.5 h-3.5" />}
                         mono
                     />
+                    {customer?.gender && <Row label="Gender" value={customer.gender} capitalize />}
+                    {customer?.dob && (
+                        <>
+                            <Row label="Date of Birth" value={customer.dob} />
+                            <Row label="Age" value={computeAgeFromDob(customer.dob) || '—'} />
+                        </>
+                    )}
+                    {customer?.relationship && (
+                        <Row label="Relationship" value={customer.relationship} capitalize />
+                    )}
                     <Row label="City" value={customer?.city || '—'} />
                     <Row label="Area" value={customer?.area || '—'} />
                     {customer?.address && (
@@ -209,6 +269,42 @@ function DrawerBody({ request, onClose }: { request: EnrichedRequest; onClose: (
                             label="Wallet"
                             value={`₹${customer.wallet_balance}`}
                             icon={<Wallet className="w-3.5 h-3.5" />}
+                        />
+                    )}
+                    {customer?.rating != null && (
+                        <Row
+                            label="Rating"
+                            value={`${Number(customer.rating).toFixed(1)} / 5`}
+                            icon={<Star className="w-3.5 h-3.5 text-yellow-400" />}
+                        />
+                    )}
+                    {customer?.referral_code && (
+                        <Row
+                            label="Referral Code"
+                            value={customer.referral_code}
+                            icon={<Gift className="w-3.5 h-3.5" />}
+                            mono
+                        />
+                    )}
+                    {customer?.selected_services && customer.selected_services.length > 0 && (
+                        <Row
+                            label="Services"
+                            value={customer.selected_services.join(', ')}
+                            capitalize
+                            multiline
+                        />
+                    )}
+                    {customer?.registered_at && (
+                        <Row
+                            label="Registered"
+                            value={new Date(customer.registered_at).toLocaleDateString('en-IN')}
+                        />
+                    )}
+                    {customer?.is_profile_complete != null && (
+                        <Row
+                            label="Profile"
+                            value={customer.is_profile_complete ? 'Complete' : 'Incomplete'}
+                            pill={customer.is_profile_complete ? 'green' : 'red'}
                         />
                     )}
                 </Section>
@@ -313,6 +409,48 @@ function DrawerBody({ request, onClose }: { request: EnrichedRequest; onClose: (
                         )}
                     </Section>
                 )}
+
+                {/* IDs (for support / debugging) */}
+                <Section icon={<Hash className="w-4 h-4" />} title="IDs">
+                    <Row label="Request ID" value={request.id} mono multiline />
+                    {request.user_id && <Row label="User ID" value={request.user_id} mono multiline />}
+                    {request.hub_id && <Row label="Hub ID" value={request.hub_id} mono multiline />}
+                </Section>
+
+                {/* Event Log */}
+                <Section icon={<History className="w-4 h-4" />} title="Event Log">
+                    {logsLoading ? (
+                        <p className="text-xs text-muted-foreground">Loading...</p>
+                    ) : logs.length === 0 ? (
+                        <p className="text-xs text-muted-foreground">No events yet.</p>
+                    ) : (
+                        <div className="relative pl-4 space-y-3 before:content-[''] before:absolute before:left-[5px] before:top-1 before:bottom-1 before:w-px before:bg-white/10">
+                            {logs.map((log, i) => (
+                                <div key={log.id} className="relative">
+                                    <span
+                                        className={`absolute -left-[13px] top-1 w-2.5 h-2.5 rounded-full border-2 border-background ${
+                                            i === logs.length - 1 ? 'bg-primary' : 'bg-white/30'
+                                        }`}
+                                    />
+                                    <p className="text-xs font-semibold capitalize">
+                                        {log.status.replace('_', ' ')}
+                                        <span className="ml-2 text-muted-foreground font-normal">
+                                            by {log.actor}
+                                        </span>
+                                    </p>
+                                    {log.message && (
+                                        <p className="text-[11px] text-muted-foreground mt-0.5 leading-relaxed">
+                                            {log.message}
+                                        </p>
+                                    )}
+                                    <p className="text-[10px] text-muted-foreground/70 mt-1 font-mono">
+                                        {new Date(log.created_at).toLocaleString('en-IN')}
+                                    </p>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </Section>
             </div>
         </>
     )
