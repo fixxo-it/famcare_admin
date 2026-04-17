@@ -7,6 +7,7 @@ import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { AdminSocketProvider } from '@/components/AdminSocketProvider'
 import SOSAlertBanner from '@/components/SOSAlertBanner'
+import OrderNotificationBanner from '@/components/OrderNotificationBanner'
 
 const navItems = [
     { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -88,6 +89,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <AdminSocketProvider>
         <div className="min-h-screen bg-background flex">
             <SOSAlertBanner />
+            <OrderNotificationBanner />
             {/* Desktop Sidebar */}
             <aside className="w-64 border-r border-white/5 bg-card/30 backdrop-blur-xl hidden md:flex flex-col fixed inset-y-0 left-0 z-30">
                 <NavContent />

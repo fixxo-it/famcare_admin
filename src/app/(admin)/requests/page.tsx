@@ -1,8 +1,11 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { Package, Clock, CheckCircle2, AlertCircle, Search, RefreshCw, UserPlus, Filter, ShieldAlert } from 'lucide-react'
+import { Package, Clock, CheckCircle2, AlertCircle, Search, RefreshCw, UserPlus, Filter, ShieldAlert, Eye } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
+import OrderDetailDrawer, { EnrichedRequest } from '@/components/OrderDetailDrawer'
+import { useAdminSocketContext } from '@/components/AdminSocketProvider'
+import { useSearchParams } from 'next/navigation'
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api'
 
@@ -18,6 +21,9 @@ export default function RequestsPage() {
     const [assigningId, setAssigningId] = useState<string | null>(null)
     const [selectedRider, setSelectedRider] = useState<string>('')
     const [refreshing, setRefreshing] = useState(false)
+    const [selectedRequest, setSelectedRequest] = useState<EnrichedRequest | null>(null)
+    const { on } = useAdminSocketContext()
+    const searchParams = useSearchParams()
 
     const getSubServiceName = (id: string) => subServices.find(s => s.id === id)?.name || '—'
 
@@ -43,6 +49,25 @@ export default function RequestsPage() {
     }, [])
 
     useEffect(() => { fetchData() }, [fetchData])
+
+    // Auto-open drawer when ?id=... is in URL (e.g. clicked from notification popup)
+    useEffect(() => {
+        const id = searchParams.get('id')
+        if (!id || requests.length === 0) return
+        const match = requests.find((r) => r.id === id)
+        if (match) setSelectedRequest(match as EnrichedRequest)
+    }, [searchParams, requests])
+
+    // Live updates: when a new order arrives, append to the list
+    useEffect(() => {
+        const off = on<EnrichedRequest>('new_order', (e) => {
+            setRequests((prev) => {
+                if (prev.find((p) => p.id === e.payload.id)) return prev
+                return [e.payload, ...prev]
+            })
+        })
+        return () => { off() }
+    }, [on])
 
     const handleRefresh = () => {
         setRefreshing(true)
@@ -188,7 +213,8 @@ export default function RequestsPage() {
                                         initial={{ opacity: 0 }}
                                         animate={{ opacity: 1 }}
                                         exit={{ opacity: 0 }}
-                                        className="hover:bg-white/[0.02] transition-colors"
+                                        onClick={() => setSelectedRequest(req as EnrichedRequest)}
+                                        className="hover:bg-white/[0.02] transition-colors cursor-pointer"
                                     >
                                         <td className="px-6 py-4">
                                             <span className="px-2.5 py-1 rounded-lg text-xs font-medium bg-primary/10 text-primary border border-primary/20 capitalize">
@@ -210,7 +236,15 @@ export default function RequestsPage() {
                                         <td className="px-6 py-4 text-xs text-muted-foreground">
                                             {new Date(req.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
                                         </td>
-                                        <td className="px-6 py-4 text-right">
+                                        <td className="px-6 py-4 text-right" onClick={(e) => e.stopPropagation()}>
+                                            <div className="flex items-center gap-2 justify-end">
+                                                <button
+                                                    onClick={(e) => { e.stopPropagation(); setSelectedRequest(req as EnrichedRequest) }}
+                                                    className="p-1.5 bg-white/5 text-muted-foreground hover:text-white text-xs rounded-lg hover:bg-white/10 transition-colors border border-white/10"
+                                                    title="View details"
+                                                >
+                                                    <Eye className="w-3.5 h-3.5" />
+                                                </button>
                                             {(req.status === 'new' || req.status === 'scheduled') && !req.assigned_rider_id ? (
                                                 assigningId === req.id ? (
                                                     <div className="flex items-center gap-2 justify-end">
@@ -258,9 +292,8 @@ export default function RequestsPage() {
                                                         </button>
                                                     </div>
                                                 )
-                                            ) : (
-                                                <span className="text-xs text-muted-foreground">—</span>
-                                            )}
+                                            ) : null}
+                                            </div>
                                         </td>
                                     </motion.tr>
                                 ))}
@@ -277,6 +310,11 @@ export default function RequestsPage() {
                     </table>
                 </div>
             </div>
+
+            <OrderDetailDrawer
+                request={selectedRequest}
+                onClose={() => setSelectedRequest(null)}
+            />
         </div>
     )
 }
