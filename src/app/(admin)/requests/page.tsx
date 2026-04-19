@@ -234,7 +234,19 @@ export default function RequestsPage() {
                                             )}
                                         </td>
                                         <td className="px-6 py-4 text-xs text-muted-foreground">
-                                            {new Date(req.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                            <div className="flex flex-col gap-0.5">
+                                                <span className="text-[11px] uppercase tracking-wide text-muted-foreground/60">
+                                                    Booked
+                                                </span>
+                                                <span className="text-xs">
+                                                    {new Date(req.created_at).toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                                                </span>
+                                                {req.scheduled_at && (
+                                                    <span className="text-[11px] text-amber-400 mt-0.5">
+                                                        Scheduled: {new Date(req.scheduled_at).toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                                                    </span>
+                                                )}
+                                            </div>
                                         </td>
                                         <td className="px-6 py-4 text-right" onClick={(e) => e.stopPropagation()}>
                                             <div className="flex items-center gap-2 justify-end">
