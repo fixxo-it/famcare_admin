@@ -9,6 +9,11 @@ import { useSearchParams } from 'next/navigation'
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api'
 
+// Skip static prerendering — this page uses useSearchParams + WebSocket which
+// force dynamic behavior. Without this, Next.js 15 fails the build trying to
+// statically render the page shell.
+export const dynamic = 'force-dynamic'
+
 const STATUS_OPTIONS = ['all', 'new', 'assigned', 'scheduled', 'en_route', 'arrived', 'in_progress', 'completed', 'cancelled']
 
 export default function RequestsPage() {
