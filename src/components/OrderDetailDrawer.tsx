@@ -419,82 +419,11 @@ function DrawerBody({ request, onClose }: { request: EnrichedRequest; onClose: (
 
                 {/* Timeline — key milestones */}
                 <Section icon={<Clock className="w-4 h-4" />} title="Timeline">
-                    {(() => {
-                        // Define milestones in sequential order. Each entry picks the
-                        // first matching log (by status token). If not found yet the
-                        // row renders as pending.
-                        const findFirst = (keys: string[]) =>
-                            logs.find((l) => keys.includes(l.status?.toLowerCase?.() || ''))
-                        const milestones: Array<{ label: string; keys: string[] }> = [
-                            { label: 'Booked',        keys: ['new', 'created', 'scheduled'] },
-                            { label: 'Assigned',      keys: ['assigned'] },
-                            { label: 'Accepted',      keys: ['accepted', 'rider_accepted'] },
-                            { label: 'On the way',    keys: ['on_the_way', 'en_route'] },
-                            { label: 'Arrived',       keys: ['arrived', 'reached'] },
-                            { label: 'In progress',   keys: ['in_progress', 'started'] },
-                            { label: 'Completed',     keys: ['completed', 'done'] },
-                        ]
-                        const cancelled = findFirst(['cancelled', 'canceled'])
-                        const ordered: Array<{ label: string; at?: string }> = milestones.map((m) => ({
-                            label: m.label,
-                            at: findFirst(m.keys)?.created_at,
-                        }))
-                        // Fallback: if "Booked" has no event but request.created_at exists, use that
-                        if (!ordered[0].at && request.created_at) {
-                            ordered[0].at = request.created_at
-                        }
-                        const lastActiveIdx = ordered.reduce((acc, r, i) => (r.at ? i : acc), -1)
-                        if (logsLoading) {
-                            return <p className="text-xs text-muted-foreground">Loading…</p>
-                        }
-                        return (
-                            <div className="space-y-2">
-                                {ordered.map((row, i) => {
-                                    const done = !!row.at
-                                    return (
-                                        <div key={row.label} className="flex items-start gap-3">
-                                            {done ? (
-                                                <CheckCircle2
-                                                    className={`w-4 h-4 mt-0.5 shrink-0 ${
-                                                        i === lastActiveIdx ? 'text-primary' : 'text-emerald-400/80'
-                                                    }`}
-                                                />
-                                            ) : (
-                                                <Circle className="w-4 h-4 mt-0.5 shrink-0 text-muted-foreground/40" />
-                                            )}
-                                            <div className="flex-1 flex items-baseline justify-between gap-4">
-                                                <span className={`text-xs ${done ? 'text-white' : 'text-muted-foreground/60'}`}>
-                                                    {row.label}
-                                                </span>
-                                                <span className="text-[11px] font-mono text-muted-foreground">
-                                                    {row.at
-                                                        ? new Date(row.at).toLocaleString('en-IN', {
-                                                            day: '2-digit', month: 'short',
-                                                            hour: '2-digit', minute: '2-digit',
-                                                        })
-                                                        : '—'}
-                                                </span>
-                                            </div>
-                                        </div>
-                                    )
-                                })}
-                                {cancelled && (
-                                    <div className="flex items-start gap-3 pt-2 mt-2 border-t border-white/5">
-                                        <CheckCircle2 className="w-4 h-4 mt-0.5 shrink-0 text-red-400" />
-                                        <div className="flex-1 flex items-baseline justify-between gap-4">
-                                            <span className="text-xs text-red-400">Cancelled</span>
-                                            <span className="text-[11px] font-mono text-muted-foreground">
-                                                {new Date(cancelled.created_at).toLocaleString('en-IN', {
-                                                    day: '2-digit', month: 'short',
-                                                    hour: '2-digit', minute: '2-digit',
-                                                })}
-                                            </span>
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-                        )
-                    })()}
+                    <TimelineSection
+                        logs={logs}
+                        loading={logsLoading}
+                        fallbackBookedAt={request.created_at || null}
+                    />
                 </Section>
 
                 {/* Event Log */}
@@ -562,6 +491,99 @@ function Section({
             <div className="space-y-2">
                 {children}
             </div>
+        </div>
+    )
+}
+
+interface MilestoneRow {
+    label: string
+    at: string | null
+}
+
+function TimelineSection({
+    logs,
+    loading,
+    fallbackBookedAt,
+}: {
+    logs: EventLog[]
+    loading: boolean
+    fallbackBookedAt: string | null
+}) {
+    const findFirst = (keys: string[]): EventLog | undefined =>
+        logs.find((l) => keys.includes((l.status || '').toLowerCase()))
+
+    const milestoneSpec: Array<{ label: string; keys: string[] }> = [
+        { label: 'Booked', keys: ['new', 'created', 'scheduled'] },
+        { label: 'Assigned', keys: ['assigned'] },
+        { label: 'Accepted', keys: ['accepted', 'rider_accepted'] },
+        { label: 'On the way', keys: ['on_the_way', 'en_route'] },
+        { label: 'Arrived', keys: ['arrived', 'reached'] },
+        { label: 'In progress', keys: ['in_progress', 'started'] },
+        { label: 'Completed', keys: ['completed', 'done'] },
+    ]
+
+    const cancelledLog = findFirst(['cancelled', 'canceled'])
+    const ordered: MilestoneRow[] = milestoneSpec.map((m) => ({
+        label: m.label,
+        at: findFirst(m.keys)?.created_at ?? null,
+    }))
+    if (!ordered[0].at && fallbackBookedAt) {
+        ordered[0].at = fallbackBookedAt
+    }
+    let lastActiveIdx = -1
+    ordered.forEach((r, i) => {
+        if (r.at) lastActiveIdx = i
+    })
+
+    if (loading) {
+        return <p className="text-xs text-muted-foreground">Loading…</p>
+    }
+
+    const fmt = (iso: string): string =>
+        new Date(iso).toLocaleString('en-IN', {
+            day: '2-digit',
+            month: 'short',
+            hour: '2-digit',
+            minute: '2-digit',
+        })
+
+    return (
+        <div className="space-y-2">
+            {ordered.map((row, i) => {
+                const done = !!row.at
+                return (
+                    <div key={row.label} className="flex items-start gap-3">
+                        {done ? (
+                            <CheckCircle2
+                                className={`w-4 h-4 mt-0.5 shrink-0 ${
+                                    i === lastActiveIdx ? 'text-primary' : 'text-emerald-400/80'
+                                }`}
+                            />
+                        ) : (
+                            <Circle className="w-4 h-4 mt-0.5 shrink-0 text-muted-foreground/40" />
+                        )}
+                        <div className="flex-1 flex items-baseline justify-between gap-4">
+                            <span className={`text-xs ${done ? 'text-white' : 'text-muted-foreground/60'}`}>
+                                {row.label}
+                            </span>
+                            <span className="text-[11px] font-mono text-muted-foreground">
+                                {row.at ? fmt(row.at) : '—'}
+                            </span>
+                        </div>
+                    </div>
+                )
+            })}
+            {cancelledLog && (
+                <div className="flex items-start gap-3 pt-2 mt-2 border-t border-white/5">
+                    <CheckCircle2 className="w-4 h-4 mt-0.5 shrink-0 text-red-400" />
+                    <div className="flex-1 flex items-baseline justify-between gap-4">
+                        <span className="text-xs text-red-400">Cancelled</span>
+                        <span className="text-[11px] font-mono text-muted-foreground">
+                            {fmt(cancelledLog.created_at)}
+                        </span>
+                    </div>
+                </div>
+            )}
         </div>
     )
 }
