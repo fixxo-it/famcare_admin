@@ -1,9 +1,10 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { Users, Search, RefreshCw, ChevronDown, ChevronUp, Phone, MapPin, Calendar, Package, Save, Edit2, Wallet, Share2, FileText } from 'lucide-react'
+import { Users, Search, RefreshCw, ChevronDown, ChevronUp, Phone, MapPin, Calendar, Package, Save, Edit2, Wallet, Share2, FileText, Bell } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import UserDocumentsModal from '@/components/UserDocumentsModal'
+import PushNotificationModal from '@/components/PushNotificationModal'
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api'
 
@@ -23,6 +24,7 @@ export default function UsersPage() {
 
     // Documents modal state
     const [docsModal, setDocsModal] = useState<{ userId: string; userName: string } | null>(null)
+    const [pushModal, setPushModal] = useState<{ userId: string; userName: string } | null>(null)
 
     const fetchUsers = useCallback(async () => {
         try {
@@ -257,6 +259,13 @@ export default function UsersPage() {
                                                             className="flex items-center gap-1.5 text-xs bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 rounded hover:bg-emerald-500/20 text-emerald-400 transition-colors"
                                                         >
                                                             <FileText className="w-3 h-3" /> Documents
+                                                        </button>
+                                                        <button
+                                                            onClick={() => setPushModal({ userId: user.id, userName: user.name || 'Unknown' })}
+                                                            disabled={user.is_deleted}
+                                                            className="flex items-center gap-1.5 text-xs bg-blue-500/10 border border-blue-500/20 px-3 py-1.5 rounded hover:bg-blue-500/20 text-blue-400 transition-colors disabled:opacity-40"
+                                                        >
+                                                            <Bell className="w-3 h-3" /> Send Push
                                                         </button>
                                                         </div>
                                                     ) : (
@@ -558,6 +567,17 @@ export default function UsersPage() {
                     userName={docsModal.userName}
                     isOpen={!!docsModal}
                     onClose={() => setDocsModal(null)}
+                />
+            )}
+
+            {/* Push Notification Modal */}
+            {pushModal && (
+                <PushNotificationModal
+                    targetId={pushModal.userId}
+                    targetName={pushModal.userName}
+                    targetType="user"
+                    isOpen={!!pushModal}
+                    onClose={() => setPushModal(null)}
                 />
             )}
         </div>

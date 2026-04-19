@@ -1,8 +1,9 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { Bike, Star, MapPin, Search, RefreshCw, PlusCircle, X, CheckCircle2, Users, Pencil, Trash2, ShieldCheck, Briefcase, BookOpen, Plus } from 'lucide-react'
+import { Bike, Star, MapPin, Search, RefreshCw, PlusCircle, X, CheckCircle2, Users, Pencil, Trash2, ShieldCheck, Briefcase, BookOpen, Plus, Bell } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
+import PushNotificationModal from '@/components/PushNotificationModal'
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api'
 
@@ -26,6 +27,7 @@ export default function RidersPage() {
     })
     const [submitting, setSubmitting] = useState(false)
     const [editingSpecialization, setEditingSpecialization] = useState<string | null>(null)
+    const [pushModal, setPushModal] = useState<{ riderId: string; riderName: string } | null>(null)
 
     const getSubServiceName = (id: string) => subServices.find(s => s.id === id)?.name || '—'
     const getParentServiceName = (id: string) => subServices.find(s => s.id === id)?.service_name || '—'
@@ -193,9 +195,8 @@ export default function RidersPage() {
     const TabButton = ({ id, label, icon: Icon }: any) => (
         <button
             onClick={() => setActiveTab(id)}
-            className={`flex items-center gap-2 px-4 py-2 text-sm font-medium transition-all border-b-2 ${
-                activeTab === id ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-white'
-            }`}
+            className={`flex items-center gap-2 px-4 py-2 text-sm font-medium transition-all border-b-2 ${activeTab === id ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-white'
+                }`}
         >
             <Icon className="w-4 h-4" />
             {label}
@@ -222,16 +223,16 @@ export default function RidersPage() {
             <AnimatePresence>
                 {showForm && (
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-                        <motion.div 
-                            initial={{ scale: 0.95, y: 20 }} 
-                            animate={{ scale: 1, y: 0 }} 
+                        <motion.div
+                            initial={{ scale: 0.95, y: 20 }}
+                            animate={{ scale: 1, y: 0 }}
                             className="bg-[#0A0A0A] border border-white/10 rounded-3xl w-full max-w-3xl max-h-[90vh] overflow-hidden flex flex-col"
                         >
                             <div className="p-6 border-b border-white/10 flex items-center justify-between">
                                 <h2 className="text-xl font-bold">{editRider ? 'Edit Profile' : 'New Caretaker'}</h2>
                                 <button onClick={resetForm} className="p-2 hover:bg-white/10 rounded-full transition-colors"><X className="w-5 h-5" /></button>
                             </div>
-                            
+
                             <div className="flex border-b border-white/10 px-6">
                                 <TabButton id="general" label="General" icon={Bike} />
                                 <TabButton id="services" label="Services" icon={Briefcase} />
@@ -244,16 +245,16 @@ export default function RidersPage() {
                                     <div className="space-y-4">
                                         <div>
                                             <label className="text-xs text-muted-foreground mb-1 block">Full Name</label>
-                                            <input required value={formData.name} onChange={(e) => setFormData((p:any) => ({ ...p, name: e.target.value }))} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm" placeholder="e.g. Sarah Johnson" />
+                                            <input required value={formData.name} onChange={(e) => setFormData((p: any) => ({ ...p, name: e.target.value }))} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm" placeholder="e.g. Sarah Johnson" />
                                         </div>
                                         <div className="grid grid-cols-2 gap-4">
                                             <div>
                                                 <label className="text-xs text-muted-foreground mb-1 block">Phone</label>
-                                                <input required value={formData.phone} onChange={(e) => setFormData((p:any) => ({ ...p, phone: e.target.value }))} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm" placeholder="+91..." />
+                                                <input required value={formData.phone} onChange={(e) => setFormData((p: any) => ({ ...p, phone: e.target.value }))} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm" placeholder="+91..." />
                                             </div>
                                             <div>
                                                 <label className="text-xs text-muted-foreground mb-1 block">Assigned Hub</label>
-                                                <select value={formData.hub_id || ''} onChange={(e) => setFormData((p:any) => ({ ...p, hub_id: e.target.value }))} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm">
+                                                <select value={formData.hub_id || ''} onChange={(e) => setFormData((p: any) => ({ ...p, hub_id: e.target.value }))} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm">
                                                     <option value="">None (Free Roam)</option>
                                                     {hubs.map(h => <option key={h.id} value={h.id}>{h.name}</option>)}
                                                 </select>
@@ -261,7 +262,7 @@ export default function RidersPage() {
                                         </div>
                                         <div>
                                             <label className="text-xs text-muted-foreground mb-1 block">Profile Photo URL</label>
-                                            <input value={formData.profile_photo || ''} onChange={(e) => setFormData((p:any) => ({ ...p, profile_photo: e.target.value }))} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm" placeholder="https://..." />
+                                            <input value={formData.profile_photo || ''} onChange={(e) => setFormData((p: any) => ({ ...p, profile_photo: e.target.value }))} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm" placeholder="https://..." />
                                         </div>
                                     </div>
                                 )}
@@ -327,7 +328,7 @@ export default function RidersPage() {
                                         <div className="grid grid-cols-2 gap-4">
                                             <div>
                                                 <label className="text-xs text-muted-foreground mb-1 block">Gender</label>
-                                                <select value={formData.gender || ''} onChange={(e) => setFormData((p:any) => ({ ...p, gender: e.target.value }))} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm">
+                                                <select value={formData.gender || ''} onChange={(e) => setFormData((p: any) => ({ ...p, gender: e.target.value }))} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm">
                                                     <option value="">Select Gender</option>
                                                     <option value="female">Female</option>
                                                     <option value="male">Male</option>
@@ -336,12 +337,12 @@ export default function RidersPage() {
                                             </div>
                                             <div>
                                                 <label className="text-xs text-muted-foreground mb-1 block">Age</label>
-                                                <input type="number" value={formData.age || ''} onChange={(e) => setFormData((p:any) => ({ ...p, age: parseInt(e.target.value) }))} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm" />
+                                                <input type="number" value={formData.age || ''} onChange={(e) => setFormData((p: any) => ({ ...p, age: parseInt(e.target.value) }))} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm" />
                                             </div>
                                         </div>
                                         <div>
                                             <label className="text-xs text-muted-foreground mb-1 block">Bio (Internal Note)</label>
-                                            <textarea value={formData.bio || ''} onChange={(e) => setFormData((p:any) => ({ ...p, bio: e.target.value }))} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-sm h-24" placeholder="Brief info about the caretaker..." />
+                                            <textarea value={formData.bio || ''} onChange={(e) => setFormData((p: any) => ({ ...p, bio: e.target.value }))} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-sm h-24" placeholder="Brief info about the caretaker..." />
                                         </div>
                                     </div>
                                 )}
@@ -350,22 +351,22 @@ export default function RidersPage() {
                                     <div className="space-y-4">
                                         <div className="grid grid-cols-2 gap-4">
                                             <label className="flex items-center gap-3 p-4 bg-white/5 border border-white/10 rounded-2xl cursor-pointer">
-                                                <input type="checkbox" checked={formData.govt_id_verified} onChange={(e) => setFormData((p:any) => ({ ...p, govt_id_verified: e.target.checked }))} className="w-4 h-4 rounded border-white/10" />
+                                                <input type="checkbox" checked={formData.govt_id_verified} onChange={(e) => setFormData((p: any) => ({ ...p, govt_id_verified: e.target.checked }))} className="w-4 h-4 rounded border-white/10" />
                                                 <span className="text-sm">Govt ID Verified</span>
                                             </label>
                                             <label className="flex items-center gap-3 p-4 bg-white/5 border border-white/10 rounded-2xl cursor-pointer">
-                                                <input type="checkbox" checked={formData.address_verified} onChange={(e) => setFormData((p:any) => ({ ...p, address_verified: e.target.checked }))} className="w-4 h-4 rounded border-white/10" />
+                                                <input type="checkbox" checked={formData.address_verified} onChange={(e) => setFormData((p: any) => ({ ...p, address_verified: e.target.checked }))} className="w-4 h-4 rounded border-white/10" />
                                                 <span className="text-sm">Address Verified</span>
                                             </label>
                                             <label className="flex items-center gap-3 p-4 bg-white/5 border border-white/10 rounded-2xl cursor-pointer">
-                                                <input type="checkbox" checked={formData.medical_checkup} onChange={(e) => setFormData((p:any) => ({ ...p, medical_checkup: e.target.checked }))} className="w-4 h-4 rounded border-white/10" />
+                                                <input type="checkbox" checked={formData.medical_checkup} onChange={(e) => setFormData((p: any) => ({ ...p, medical_checkup: e.target.checked }))} className="w-4 h-4 rounded border-white/10" />
                                                 <span className="text-sm">Medical Checkup Done</span>
                                             </label>
                                         </div>
                                         <div className="grid grid-cols-2 gap-4">
                                             <div>
                                                 <label className="text-xs text-muted-foreground mb-1 block">Background Check</label>
-                                                <select value={formData.background_check_status} onChange={(e) => setFormData((p:any) => ({ ...p, background_check_status: e.target.value }))} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm">
+                                                <select value={formData.background_check_status} onChange={(e) => setFormData((p: any) => ({ ...p, background_check_status: e.target.value }))} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm">
                                                     <option value="pending">Pending</option>
                                                     <option value="verified">Verified</option>
                                                     <option value="expired">Expired</option>
@@ -373,7 +374,7 @@ export default function RidersPage() {
                                             </div>
                                             <div>
                                                 <label className="text-xs text-muted-foreground mb-1 block">Badge Level</label>
-                                                <select value={formData.verification_badge} onChange={(e) => setFormData((p:any) => ({ ...p, verification_badge: e.target.value }))} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm">
+                                                <select value={formData.verification_badge} onChange={(e) => setFormData((p: any) => ({ ...p, verification_badge: e.target.value }))} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm">
                                                     <option value="none">None</option>
                                                     <option value="certified">Certified</option>
                                                     <option value="expert">Expert</option>
@@ -388,7 +389,7 @@ export default function RidersPage() {
                                     <div className="space-y-4">
                                         <div>
                                             <label className="text-xs text-muted-foreground mb-1 block">Years of Experience</label>
-                                            <input type="number" step="0.5" value={formData.experience_years} onChange={(e) => setFormData((p:any) => ({ ...p, experience_years: parseFloat(e.target.value) }))} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm" />
+                                            <input type="number" step="0.5" value={formData.experience_years} onChange={(e) => setFormData((p: any) => ({ ...p, experience_years: parseFloat(e.target.value) }))} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm" />
                                         </div>
                                         {/* Simplified list handling for demo */}
                                         <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest">Experience details will be expanded in next update</p>
@@ -550,6 +551,7 @@ export default function RidersPage() {
                                             >
                                                 {rider.is_available ? 'Online' : 'Offline'}
                                             </button>
+                                            <button onClick={() => setPushModal({ riderId: rider.id, riderName: rider.name || 'Caretaker' })} className="p-2.5 rounded-xl hover:bg-blue-500/10 text-muted-foreground hover:text-blue-400 transition-all" title="Send Push Notification"><Bell className="w-4 h-4" /></button>
                                             <button onClick={() => startEdit(rider)} className="p-2.5 rounded-xl hover:bg-white/10 text-muted-foreground hover:text-white transition-all"><Pencil className="w-4 h-4" /></button>
                                             <button onClick={() => handleDelete(rider.id)} className="p-2.5 rounded-xl hover:bg-red-500/10 text-muted-foreground hover:text-red-400 transition-all"><Trash2 className="w-4 h-4" /></button>
                                         </div>
@@ -560,6 +562,16 @@ export default function RidersPage() {
                     </table>
                 </div>
             </div>
+            {/* Push Notification Modal */}
+            {pushModal && (
+                <PushNotificationModal
+                    targetId={pushModal.riderId}
+                    targetName={pushModal.riderName}
+                    targetType="rider"
+                    isOpen={!!pushModal}
+                    onClose={() => setPushModal(null)}
+                />
+            )}
         </div>
     )
 }
