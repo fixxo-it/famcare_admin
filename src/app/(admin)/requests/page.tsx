@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
-import { Package, Clock, CheckCircle2, AlertCircle, Search, RefreshCw, UserPlus, Filter, ShieldAlert, Eye } from 'lucide-react'
+import { useState, useEffect, useCallback, Suspense } from 'react'
+import { Package, Clock, CheckCircle2, AlertCircle, Search, RefreshCw, UserPlus, Filter, ShieldAlert, Eye, Loader2 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import OrderDetailDrawer, { EnrichedRequest } from '@/components/OrderDetailDrawer'
 import { useAdminSocketContext } from '@/components/AdminSocketProvider'
@@ -9,14 +9,9 @@ import { useSearchParams } from 'next/navigation'
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api'
 
-// Skip static prerendering — this page uses useSearchParams + WebSocket which
-// force dynamic behavior. Without this, Next.js 15 fails the build trying to
-// statically render the page shell.
-export const dynamic = 'force-dynamic'
-
 const STATUS_OPTIONS = ['all', 'new', 'assigned', 'scheduled', 'en_route', 'arrived', 'in_progress', 'completed', 'cancelled']
 
-export default function RequestsPage() {
+function RequestsPageInner() {
     const [requests, setRequests] = useState<any[]>([])
     const [riders, setRiders] = useState<any[]>([])
     const [subServices, setSubServices] = useState<{id: string, name: string, service_name: string}[]>([])
@@ -374,5 +369,16 @@ function MiniStat({ icon, label, value }: { icon: React.ReactNode; label: string
                 <p className="text-xl font-bold">{value}</p>
             </div>
         </div>
+    )
+}
+
+// Wrap in <Suspense> because RequestsPageInner uses useSearchParams.
+// Next.js 16 requires this — without it, prerendering /requests fails the build.
+// Same pattern as /sos/page.tsx.
+export default function RequestsPage() {
+    return (
+        <Suspense fallback={<div className="p-12 flex items-center justify-center"><Loader2 className="w-6 h-6 text-primary animate-spin" /></div>}>
+            <RequestsPageInner />
+        </Suspense>
     )
 }
