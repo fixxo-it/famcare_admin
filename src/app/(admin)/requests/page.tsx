@@ -198,6 +198,8 @@ export default function RequestsPage() {
                         <thead>
                             <tr className="bg-white/[0.03] text-xs uppercase tracking-wider text-muted-foreground">
                                 <th className="px-6 py-4 font-semibold">Service</th>
+                                <th className="px-6 py-4 font-semibold">Duration</th>
+                                <th className="px-6 py-4 font-semibold">Amount</th>
                                 <th className="px-6 py-4 font-semibold">User</th>
                                 <th className="px-6 py-4 font-semibold">Status</th>
                                 <th className="px-6 py-4 font-semibold">Rider</th>
@@ -220,6 +222,31 @@ export default function RequestsPage() {
                                             <span className="px-2.5 py-1 rounded-lg text-xs font-medium bg-primary/10 text-primary border border-primary/20 capitalize">
                                                 {req.sub_service_id ? getSubServiceName(req.sub_service_id) : req.service?.replace('_', ' ') || '—'}
                                             </span>
+                                        </td>
+                                        <td className="px-6 py-4 text-sm">
+                                            {(() => {
+                                                const d = (req as EnrichedRequest).details || {}
+                                                const dur = (d.duration as string | undefined) || (d.hours as string | undefined)
+                                                if (!dur) return <span className="text-muted-foreground/60 text-xs">—</span>
+                                                return (
+                                                    <span className="px-2 py-0.5 rounded-md bg-amber-400/10 text-amber-300 border border-amber-400/20 text-xs font-medium">
+                                                        {dur}
+                                                    </span>
+                                                )
+                                            })()}
+                                        </td>
+                                        <td className="px-6 py-4 text-sm">
+                                            {(() => {
+                                                const p = (req as EnrichedRequest).payment
+                                                const sub = (req as EnrichedRequest).sub_service
+                                                const amt = p?.amount ?? sub?.price ?? null
+                                                if (amt == null) return <span className="text-muted-foreground/60 text-xs">—</span>
+                                                return (
+                                                    <span className="font-semibold text-emerald-300">
+                                                        ₹{Number(amt).toLocaleString('en-IN')}
+                                                    </span>
+                                                )
+                                            })()}
                                         </td>
                                         <td className="px-6 py-4 text-sm">{req.user_phone}</td>
                                         <td className="px-6 py-4">
@@ -312,7 +339,7 @@ export default function RequestsPage() {
                             </AnimatePresence>
                             {filtered.length === 0 && (
                                 <tr>
-                                    <td colSpan={6} className="px-6 py-16 text-center text-muted-foreground">
+                                    <td colSpan={8} className="px-6 py-16 text-center text-muted-foreground">
                                         <Package className="w-10 h-10 mx-auto mb-3 opacity-20" />
                                         <p className="text-sm">No requests found</p>
                                     </td>
