@@ -286,10 +286,10 @@ function DrawerBody({ request, onClose }: { request: EnrichedRequest; onClose: (
                             mono
                         />
                     )}
-                    {customer?.selected_services && customer.selected_services.length > 0 && (
+                    {Boolean(customer?.selected_services && customer.selected_services.length > 0) && (
                         <Row
                             label="Services"
-                            value={customer.selected_services.join(', ')}
+                            value={(customer?.selected_services ?? []).join(', ')}
                             capitalize
                             multiline
                         />
@@ -361,7 +361,7 @@ function DrawerBody({ request, onClose }: { request: EnrichedRequest; onClose: (
                 )}
 
                 {/* Location */}
-                {(request.details?.latitude != null || request.details?.address) && (
+                {(request.details?.latitude != null || request.details?.address != null) && (
                     <Section icon={<MapPin className="w-4 h-4" />} title="Location">
                         {request.details?.address != null && (
                             <Row label="Address" value={String(request.details.address)} multiline />
