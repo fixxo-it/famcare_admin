@@ -1,8 +1,9 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { Users, Search, RefreshCw, ChevronDown, ChevronUp, Phone, MapPin, Calendar, Package, Save, Edit2, Wallet, Share2 } from 'lucide-react'
+import { Users, Search, RefreshCw, ChevronDown, ChevronUp, Phone, MapPin, Calendar, Package, Save, Edit2, Wallet, Share2, FileText } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
+import UserDocumentsModal from '@/components/UserDocumentsModal'
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api'
 
@@ -19,6 +20,9 @@ export default function UsersPage() {
     const [editForm, setEditForm] = useState<any>({})
     const [saving, setSaving] = useState(false)
     const [showDeleted, setShowDeleted] = useState(false)
+
+    // Documents modal state
+    const [docsModal, setDocsModal] = useState<{ userId: string; userName: string } | null>(null)
 
     const fetchUsers = useCallback(async () => {
         try {
@@ -240,6 +244,7 @@ export default function UsersPage() {
                                                         User Profile
                                                     </p>
                                                     {editMode !== user.id ? (
+                                                        <div className="flex items-center gap-2">
                                                         <button
                                                             onClick={() => startEditing(user)}
                                                             disabled={user.is_deleted}
@@ -247,6 +252,13 @@ export default function UsersPage() {
                                                         >
                                                             <Edit2 className="w-3 h-3" /> Edit Profile
                                                         </button>
+                                                        <button
+                                                            onClick={() => setDocsModal({ userId: user.id, userName: user.name || 'Unknown' })}
+                                                            className="flex items-center gap-1.5 text-xs bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 rounded hover:bg-emerald-500/20 text-emerald-400 transition-colors"
+                                                        >
+                                                            <FileText className="w-3 h-3" /> Documents
+                                                        </button>
+                                                        </div>
                                                     ) : (
                                                         <div className="flex gap-2">
                                                             <button 
@@ -538,6 +550,16 @@ export default function UsersPage() {
                     )}
                 </div>
             </div>
+
+            {/* Documents Modal */}
+            {docsModal && (
+                <UserDocumentsModal
+                    userId={docsModal.userId}
+                    userName={docsModal.userName}
+                    isOpen={!!docsModal}
+                    onClose={() => setDocsModal(null)}
+                />
+            )}
         </div>
     )
 }
