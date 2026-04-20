@@ -260,12 +260,23 @@ export default function UsersPage() {
                                                         >
                                                             <FileText className="w-3 h-3" /> Documents
                                                         </button>
-                                                        <button
+                                                         <button
                                                             onClick={() => setPushModal({ userId: user.id, userName: user.name || 'Unknown' })}
                                                             disabled={user.is_deleted}
-                                                            className="flex items-center gap-1.5 text-xs bg-blue-500/10 border border-blue-500/20 px-3 py-1.5 rounded hover:bg-blue-500/20 text-blue-400 transition-colors disabled:opacity-40"
+                                                            className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded transition-colors disabled:opacity-40 ${
+                                                                user.has_fcm_token 
+                                                                ? 'bg-blue-500/10 border border-blue-500/20 text-blue-400 hover:bg-blue-500/20' 
+                                                                : 'bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20'
+                                                            }`}
+                                                            title={user.has_fcm_token ? 'FCM Token present' : 'No FCM Token registered'}
                                                         >
-                                                            <Bell className="w-3 h-3" /> Send Push
+                                                            <Bell className="w-3 h-3" /> 
+                                                            Send Push
+                                                            {user.has_fcm_token ? (
+                                                                <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse ml-0.5" />
+                                                            ) : (
+                                                                <span className="w-1.5 h-1.5 rounded-full bg-red-400 ml-0.5" />
+                                                            )}
                                                         </button>
                                                         </div>
                                                     ) : (

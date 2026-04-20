@@ -551,11 +551,27 @@ export default function RidersPage() {
                                             >
                                                 {rider.is_available ? 'Online' : 'Offline'}
                                             </button>
-                                            <button onClick={() => setPushModal({ riderId: rider.id, riderName: rider.name || 'Caretaker' })} className="p-2.5 rounded-xl hover:bg-blue-500/10 text-muted-foreground hover:text-blue-400 transition-all" title="Send Push Notification"><Bell className="w-4 h-4" /></button>
+                                            <button 
+                                                onClick={() => setPushModal({ riderId: rider.id, riderName: rider.name || 'Caretaker' })} 
+                                                className={`relative p-2.5 rounded-xl transition-all ${
+                                                    rider.has_fcm_token 
+                                                    ? 'hover:bg-blue-500/10 text-blue-400' 
+                                                    : 'hover:bg-red-500/10 text-red-400/60'
+                                                }`}
+                                                title={rider.has_fcm_token ? 'FCM Token present' : 'No FCM Token registered'}
+                                            >
+                                                <Bell className="w-4 h-4" />
+                                                {rider.has_fcm_token ? (
+                                                    <span className="absolute top-2 right-2 w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse" />
+                                                ) : (
+                                                    <span className="absolute top-2 right-2 w-1.5 h-1.5 rounded-full bg-red-400" />
+                                                )}
+                                            </button>
                                             <button onClick={() => startEdit(rider)} className="p-2.5 rounded-xl hover:bg-white/10 text-muted-foreground hover:text-white transition-all"><Pencil className="w-4 h-4" /></button>
                                             <button onClick={() => handleDelete(rider.id)} className="p-2.5 rounded-xl hover:bg-red-500/10 text-muted-foreground hover:text-red-400 transition-all"><Trash2 className="w-4 h-4" /></button>
                                         </div>
                                     </td>
+
                                 </tr>
                             ))}
                         </tbody>
