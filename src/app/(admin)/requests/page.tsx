@@ -239,11 +239,24 @@ function RequestsPageInner() {
                                             {(() => {
                                                 const p = (req as EnrichedRequest).payment
                                                 const sub = (req as EnrichedRequest).sub_service
-                                                const amt = p?.amount ?? sub?.price ?? null
-                                                if (amt == null) return <span className="text-muted-foreground/60 text-xs">—</span>
+                                                // payments.amount is stored in paise (integer). sub_services.price is
+                                                // stored in rupees as NUMERIC(10,2). Normalise to paise before display,
+                                                // then divide by 100 for the final ₹-denominated value with 2 decimals.
+                                                const amtPaise: number | null =
+                                                    p?.amount != null
+                                                        ? Number(p.amount)
+                                                        : sub?.price != null
+                                                            ? Math.round(Number(sub.price) * 100)
+                                                            : null
+                                                if (amtPaise == null || Number.isNaN(amtPaise))
+                                                    return <span className="text-muted-foreground/60 text-xs">—</span>
+                                                const amtRupees = amtPaise / 100
                                                 return (
                                                     <span className="font-semibold text-emerald-300">
-                                                        ₹{Number(amt).toLocaleString('en-IN')}
+                                                        ₹{amtRupees.toLocaleString('en-IN', {
+                                                            minimumFractionDigits: 2,
+                                                            maximumFractionDigits: 2,
+                                                        })}
                                                     </span>
                                                 )
                                             })()}
