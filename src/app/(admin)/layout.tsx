@@ -1,6 +1,6 @@
 'use client'
 
-import { Shield, LayoutDashboard, Package, Users, Bike, Map, ListTree, Ticket, ImageIcon, Clock, LogOut, Menu, X, Siren, Settings, ClipboardList } from 'lucide-react'
+import { Shield, LayoutDashboard, Package, Users, Bike, Map, ListTree, Ticket, ImageIcon, Clock, LogOut, Menu, X, Siren, Settings, ClipboardList, Code2 } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useState } from 'react'
@@ -19,6 +19,7 @@ const navItems = [
     { href: '/coupons', label: 'Coupons', icon: Ticket },
     { href: '/banners', label: 'Banners', icon: ImageIcon },
     { href: '/guidelines', label: 'Guidelines', icon: ClipboardList },
+    { href: '/developers', label: 'Developers', icon: Code2 },
     { href: '/slots', label: 'Slots', icon: Clock },
     { href: '/sos', label: 'SOS', icon: Siren },
     { href: '/config', label: 'Config', icon: Settings },
