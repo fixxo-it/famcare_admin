@@ -125,6 +125,28 @@ export default function UsersPage() {
         }
     }
 
+    const resetFCM = async (userId: string) => {
+        if (!confirm("Are you sure you want to reset this user's FCM token? They will not receive notifications until they open the app again.")) return;
+        
+        try {
+            const res = await fetch(`${API_BASE}/admin/users/${userId}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ fcm_token: null })
+            })
+            if (res.ok) {
+                const updated = await res.json()
+                setUsers(prev => prev.map(u => u.id === userId ? updated : u))
+                alert("FCM Token reset successfully.")
+            } else {
+                alert("Failed to reset FCM Token.")
+            }
+        } catch (e) {
+            console.error('Error resetting FCM:', e)
+            alert("Error resetting FCM.")
+        }
+    }
+
     const filtered = users.filter((u) => {
         if (!showDeleted && u.is_deleted) return false
         if (!search) return true
@@ -278,6 +300,16 @@ export default function UsersPage() {
                                                                 <span className="w-1.5 h-1.5 rounded-full bg-red-400 ml-0.5" />
                                                             )}
                                                         </button>
+
+                                                        {user.has_fcm_token && (
+                                                            <button
+                                                                onClick={() => resetFCM(user.id)}
+                                                                className="flex items-center gap-1.5 text-xs bg-red-500/10 border border-red-500/20 px-3 py-1.5 rounded hover:bg-red-500/20 text-red-400 transition-colors"
+                                                                title="Reset FCM Token"
+                                                            >
+                                                                <RefreshCw className="w-3 h-3" /> Reset FCM
+                                                            </button>
+                                                        )}
                                                         </div>
                                                     ) : (
                                                         <div className="flex gap-2">
