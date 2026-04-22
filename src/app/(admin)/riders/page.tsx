@@ -1,9 +1,10 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { Bike, Star, MapPin, Search, RefreshCw, PlusCircle, X, CheckCircle2, Users, Pencil, Trash2, ShieldCheck, Briefcase, BookOpen, Plus, Bell } from 'lucide-react'
+import { Bike, Star, MapPin, Search, RefreshCw, PlusCircle, X, CheckCircle2, Users, Pencil, Trash2, ShieldCheck, Briefcase, BookOpen, Plus, Bell, FileCheck, Loader2, AlertCircle, Download } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import PushNotificationModal from '@/components/PushNotificationModal'
+import VerificationModal from '@/components/VerificationModal'
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api'
 
@@ -18,7 +19,7 @@ export default function RidersPage() {
     const [activeTab, setActiveTab] = useState('general')
     const [formData, setFormData] = useState<any>({
         name: '', phone: '', sub_service_id: '', other_sub_service_ids: [],
-        address: '', hub_id: '',
+        address: '', hub_id: '', email: '', date_of_birth: '', father_name: '',
         gender: '', age: '', languages: [],
         govt_id_verified: false, govt_id_type: '', address_verified: false,
         background_check_status: 'pending', verification_badge: 'none',
@@ -28,6 +29,7 @@ export default function RidersPage() {
     const [submitting, setSubmitting] = useState(false)
     const [editingSpecialization, setEditingSpecialization] = useState<string | null>(null)
     const [pushModal, setPushModal] = useState<{ riderId: string; riderName: string } | null>(null)
+    const [verifyModal, setVerifyModal] = useState<any>(null)
 
     const getSubServiceName = (id: string) => subServices.find(s => s.id === id)?.name || '—'
     const getParentServiceName = (id: string) => subServices.find(s => s.id === id)?.service_name || '—'
@@ -154,7 +156,7 @@ export default function RidersPage() {
         setEditRider(null)
         setFormData({
             name: '', phone: '', sub_service_id: '', other_sub_service_ids: [],
-            address: '', hub_id: '',
+            address: '', hub_id: '', email: '', date_of_birth: '', father_name: '',
             gender: '', age: '', languages: [],
             govt_id_verified: false, govt_id_type: '', address_verified: false,
             background_check_status: 'pending', verification_badge: 'none',
@@ -164,12 +166,31 @@ export default function RidersPage() {
         setActiveTab('general')
     }
 
+    const getVerificationBadge = (rider: any) => {
+        const status = rider.springverify_status || 'not_initiated'
+        switch (status) {
+            case 'verified':
+                return { color: 'text-green-400', bg: 'bg-green-500/10', border: 'border-green-500/20', icon: CheckCircle2, label: 'Verified', animate: false }
+            case 'failed':
+                return { color: 'text-red-400', bg: 'bg-red-500/10', border: 'border-red-500/20', icon: AlertCircle, label: 'Failed', animate: false }
+            case 'in_progress':
+                return { color: 'text-blue-400', bg: 'bg-blue-500/10', border: 'border-blue-500/20', icon: Loader2, label: 'Verifying...', animate: true }
+            case 'insufficiency':
+                return { color: 'text-yellow-400', bg: 'bg-yellow-500/10', border: 'border-yellow-500/20', icon: AlertCircle, label: 'Insufficiency', animate: false }
+            default:
+                return { color: 'text-gray-500', bg: 'bg-white/5', border: 'border-white/10', icon: ShieldCheck, label: 'Not Verified', animate: false }
+        }
+    }
+
     const startEdit = (rider: any) => {
         setEditRider(rider)
         setFormData({
             ...rider,
             sub_service_id: rider.sub_service_id || '',
             other_sub_service_ids: rider.other_sub_service_ids || [],
+            email: rider.email || '',
+            date_of_birth: rider.date_of_birth || '',
+            father_name: rider.father_name || '',
             languages: rider.languages || [],
             care_types: rider.care_types || [],
             work_formats: rider.work_formats || [],
@@ -260,9 +281,25 @@ export default function RidersPage() {
                                                 </select>
                                             </div>
                                         </div>
-                                        <div>
-                                            <label className="text-xs text-muted-foreground mb-1 block">Profile Photo URL</label>
-                                            <input value={formData.profile_photo || ''} onChange={(e) => setFormData((p: any) => ({ ...p, profile_photo: e.target.value }))} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm" placeholder="https://..." />
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div>
+                                                <label className="text-xs text-muted-foreground mb-1 block">Email</label>
+                                                <input type="email" value={formData.email || ''} onChange={(e) => setFormData((p: any) => ({ ...p, email: e.target.value }))} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm" placeholder="name@example.com" />
+                                            </div>
+                                            <div>
+                                                <label className="text-xs text-muted-foreground mb-1 block">Date of Birth</label>
+                                                <input type="date" value={formData.date_of_birth || ''} onChange={(e) => setFormData((p: any) => ({ ...p, date_of_birth: e.target.value }))} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm" />
+                                            </div>
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div>
+                                                <label className="text-xs text-muted-foreground mb-1 block">Father&apos;s Name</label>
+                                                <input value={formData.father_name || ''} onChange={(e) => setFormData((p: any) => ({ ...p, father_name: e.target.value }))} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm" placeholder="Father's full name" />
+                                            </div>
+                                            <div>
+                                                <label className="text-xs text-muted-foreground mb-1 block">Profile Photo URL</label>
+                                                <input value={formData.profile_photo || ''} onChange={(e) => setFormData((p: any) => ({ ...p, profile_photo: e.target.value }))} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm" placeholder="https://..." />
+                                            </div>
                                         </div>
                                     </div>
                                 )}
@@ -458,6 +495,7 @@ export default function RidersPage() {
                                 <th className="px-6 py-5">Profile</th>
                                 <th className="px-6 py-5">Specialization</th>
                                 <th className="px-6 py-5">Verification</th>
+                                <th className="px-6 py-5">BGV Status</th>
                                 <th className="px-6 py-5">Performance</th>
                                 <th className="px-6 py-5 text-right">Actions</th>
                             </tr>
@@ -537,6 +575,21 @@ export default function RidersPage() {
                                         </div>
                                     </td>
                                     <td className="px-6 py-5">
+                                        {(() => {
+                                            const badge = getVerificationBadge(rider)
+                                            const Icon = badge.icon
+                                            return (
+                                                <button
+                                                    onClick={() => setVerifyModal(rider)}
+                                                    className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-[10px] font-bold border transition-all hover:scale-105 ${badge.bg} ${badge.color} ${badge.border}`}
+                                                >
+                                                    <Icon className={`w-3.5 h-3.5 ${badge.animate ? 'animate-spin' : ''}`} />
+                                                    {badge.label}
+                                                </button>
+                                            )
+                                        })()}
+                                    </td>
+                                    <td className="px-6 py-5">
                                         <div className="flex items-center gap-1.5">
                                             <Star className="w-4 h-4 fill-yellow-500 text-yellow-500" />
                                             <span className="text-sm font-bold">{rider.rating ?? '5.0'}</span>
@@ -586,6 +639,15 @@ export default function RidersPage() {
                     targetType="rider"
                     isOpen={!!pushModal}
                     onClose={() => setPushModal(null)}
+                />
+            )}
+            {/* Verification Modal */}
+            {verifyModal && (
+                <VerificationModal
+                    rider={verifyModal}
+                    isOpen={!!verifyModal}
+                    onClose={() => setVerifyModal(null)}
+                    onVerificationStarted={() => fetchData()}
                 />
             )}
         </div>
