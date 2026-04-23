@@ -14,6 +14,9 @@ type AppConfig = {
     update_message: string | null
     version_source: string
     is_active: boolean
+    app_name: string
+    app_logo_url: string
+    app_description: string
 }
 
 type FormState = {
@@ -24,6 +27,9 @@ type FormState = {
     update_title: string
     update_message: string
     is_active: boolean
+    app_name: string
+    app_logo_url: string
+    app_description: string
 }
 
 const emptyForm: FormState = {
@@ -34,6 +40,9 @@ const emptyForm: FormState = {
     update_title: 'Update available',
     update_message: 'A newer version is available. Please update to continue.',
     is_active: true,
+    app_name: 'FamCare',
+    app_logo_url: '',
+    app_description: '',
 }
 
 function normalizeForm(config: AppConfig): FormState {
@@ -45,6 +54,9 @@ function normalizeForm(config: AppConfig): FormState {
         update_title: config.update_title || 'Update available',
         update_message: config.update_message || 'A newer version is available. Please update to continue.',
         is_active: Boolean(config.is_active),
+        app_name: config.app_name || 'FamCare',
+        app_logo_url: config.app_logo_url || '',
+        app_description: config.app_description || '',
     }
 }
 
@@ -122,6 +134,9 @@ export default function ConfigPage() {
                 update_message: form.update_message.trim() || 'A newer version is available. Please update to continue.',
                 version_source: 'admin',
                 is_active: form.is_active,
+                app_name: form.app_name.trim() || 'FamCare',
+                app_logo_url: form.app_logo_url.trim() || null,
+                app_description: form.app_description.trim() || null,
             }
 
             const res = await fetch(`${API_BASE}/admin/app-config`, {
@@ -160,6 +175,27 @@ export default function ConfigPage() {
                 >
                     <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
                     Refresh
+                </button>
+                <button
+                    type="button"
+                    onClick={async () => {
+                        if (!confirm('This will trigger a production build and deployment to the App Stores. Are you sure?')) return;
+                        setSaving(true);
+                        try {
+                            const res = await fetch(`${API_BASE}/admin/trigger-build`, { method: 'POST' });
+                            if (!res.ok) throw new Error(await res.text());
+                            alert('Build triggered successfully!');
+                        } catch (e: any) {
+                            alert('Failed to trigger build: ' + e.message);
+                        } finally {
+                            setSaving(false);
+                        }
+                    }}
+                    disabled={loading || saving}
+                    className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-orange-500/10 hover:bg-orange-500/20 text-sm text-orange-200 border border-orange-500/20 transition-all disabled:opacity-50"
+                >
+                    <Settings className="w-4 h-4" />
+                    Trigger Rebuild
                 </button>
             </div>
 
@@ -264,6 +300,42 @@ export default function ConfigPage() {
                                 onChange={e => updateField('update_message', e.target.value)}
                                 rows={4}
                                 className="w-full resize-none bg-white/5 border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder-muted-foreground focus:outline-none focus:border-primary/50"
+                            />
+                        </div>
+
+                        <div className="md:col-span-2 pt-4 border-t border-white/10">
+                            <h3 className="text-sm font-semibold text-primary uppercase tracking-wider">App Branding (Requires Rebuild)</h3>
+                        </div>
+
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium text-white">App Display Name</label>
+                            <input
+                                type="text"
+                                value={form.app_name}
+                                onChange={e => updateField('app_name', e.target.value)}
+                                placeholder="FamCare"
+                                className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-primary/50"
+                            />
+                        </div>
+
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium text-white">App Logo URL</label>
+                            <input
+                                type="url"
+                                value={form.app_logo_url}
+                                onChange={e => updateField('app_logo_url', e.target.value)}
+                                placeholder="https://example.com/logo.png"
+                                className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-primary/50"
+                            />
+                        </div>
+
+                        <div className="space-y-2 md:col-span-2">
+                            <label className="text-sm font-medium text-white">Store Description</label>
+                            <textarea
+                                value={form.app_description}
+                                onChange={e => updateField('app_description', e.target.value)}
+                                rows={6}
+                                className="w-full resize-none bg-white/5 border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-primary/50"
                             />
                         </div>
                     </div>
