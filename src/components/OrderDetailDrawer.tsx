@@ -363,6 +363,22 @@ function DrawerBody({ request, onClose }: { request: EnrichedRequest; onClose: (
                 {/* Location */}
                 {(request.details?.latitude != null || request.details?.address != null) && (
                     <Section icon={<MapPin className="w-4 h-4" />} title="Location">
+                        {request.details?.address_label != null && (
+                            <Row
+                                label="Label"
+                                value={
+                                    String(request.details.address_label)
+                                        .replace(/_/g, ' ')
+                                        .replace(/\b\w/g, (c: string) => c.toUpperCase())
+                                }
+                            />
+                        )}
+                        {request.details?.house_no != null && (
+                            <Row label="House / Flat / Floor" value={String(request.details.house_no)} />
+                        )}
+                        {request.details?.building != null && (
+                            <Row label="Building & Block" value={String(request.details.building)} />
+                        )}
                         {request.details?.address != null && (
                             <Row label="Address" value={String(request.details.address)} multiline />
                         )}
