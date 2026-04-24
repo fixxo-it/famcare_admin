@@ -66,6 +66,38 @@ export default function SlotsPage() {
     const [adding, setAdding] = useState(false)
     const [addError, setAddError] = useState('')
 
+    // Operational hours config
+    const [config, setConfig] = useState<any>(null)
+    const [savingConfig, setSavingConfig] = useState(false)
+
+    const fetchConfig = useCallback(async () => {
+        try {
+            const res = await fetch(`${API_BASE}/admin/app-config`)
+            if (res.ok) {
+                const data = await res.json()
+                setConfig(data)
+            }
+        } catch (err) {
+            console.error('Failed to fetch config', err)
+        }
+    }, [])
+
+    useEffect(() => { fetchConfig() }, [fetchConfig])
+
+    const updateOperationalHours = async (field: string, value: string) => {
+        setSavingConfig(true)
+        try {
+            await fetch(`${API_BASE}/admin/app-config`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ [field]: value }),
+            })
+            await fetchConfig()
+        } finally {
+            setSavingConfig(false)
+        }
+    }
+
     const fetchOverview = useCallback(async (d: string) => {
         setLoading(true)
         try {
@@ -236,6 +268,50 @@ export default function SlotsPage() {
                         {showAddForm ? <X className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
                         {showAddForm ? 'Cancel' : 'Add Slot'}
                     </button>
+                </div>
+            </div>
+
+            {/* Operational Hours Settings */}
+            <div className="glass-card flex flex-wrap items-center justify-between gap-6 p-5 border-primary/10">
+                <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+                        <Clock className="w-5 h-5" />
+                    </div>
+                    <div>
+                        <h2 className="text-sm font-semibold">Operational Hours</h2>
+                        <p className="text-xs text-muted-foreground mt-0.5">Define the global booking window for customers.</p>
+                    </div>
+                </div>
+                
+                <div className="flex items-center gap-4">
+                    <div className="flex flex-col gap-1">
+                        <label className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Start Time</label>
+                        <input 
+                            type="text"
+                            placeholder="10:00 AM"
+                            value={config?.operational_start_time || ''}
+                            onChange={(e) => setConfig({ ...config, operational_start_time: e.target.value })}
+                            onBlur={(e) => updateOperationalHours('operational_start_time', e.target.value)}
+                            className="bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 text-sm w-32 focus:border-primary/50 outline-none transition-all"
+                        />
+                    </div>
+                    <div className="text-muted-foreground mt-4 text-xs font-medium">to</div>
+                    <div className="flex flex-col gap-1">
+                        <label className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">End Time</label>
+                        <input 
+                            type="text"
+                            placeholder="10:00 PM"
+                            value={config?.operational_end_time || ''}
+                            onChange={(e) => setConfig({ ...config, operational_end_time: e.target.value })}
+                            onBlur={(e) => updateOperationalHours('operational_end_time', e.target.value)}
+                            className="bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 text-sm w-32 focus:border-primary/50 outline-none transition-all"
+                        />
+                    </div>
+                    {savingConfig && (
+                        <div className="mt-4">
+                            <RefreshCw className="w-4 h-4 animate-spin text-primary" />
+                        </div>
+                    )}
                 </div>
             </div>
 
