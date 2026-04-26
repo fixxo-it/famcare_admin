@@ -17,6 +17,7 @@ const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api'
 export default function PushNotificationModal({ targetId, targetName, targetType, isOpen, onClose }: PushNotificationModalProps) {
     const [title, setTitle] = useState('')
     const [body, setBody] = useState('')
+    const [link, setLink] = useState('')
     const [loading, setLoading] = useState(false)
     const [status, setStatus] = useState<'idle' | 'success' | 'error'>('idle')
 
@@ -29,7 +30,7 @@ export default function PushNotificationModal({ targetId, targetName, targetType
             const res = await fetch(`${API_BASE}/${endpoint}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ title, body })
+                body: JSON.stringify({ title, body, link: link || undefined })
             })
 
             if (res.ok) {
@@ -39,6 +40,7 @@ export default function PushNotificationModal({ targetId, targetName, targetType
                     setStatus('idle')
                     setTitle('')
                     setBody('')
+                    setLink('')
                 }, 1500)
             } else {
                 const err = await res.json()
@@ -95,8 +97,18 @@ export default function PushNotificationModal({ targetId, targetName, targetType
                                     value={body}
                                     onChange={e => setBody(e.target.value)}
                                     placeholder="Enter the message you want the user to see..."
-                                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-primary/50 transition-all h-32 resize-none"
+                                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-primary/50 transition-all h-24 resize-none"
                                 />
+                            </div>
+                            <div className="space-y-1.5">
+                                <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Deep Link / Route (Optional)</label>
+                                <input 
+                                    value={link}
+                                    onChange={e => setLink(e.target.value)}
+                                    placeholder="e.g. /payment-flow or /profile"
+                                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-primary/50 transition-all"
+                                />
+                                <p className="text-[10px] text-muted-foreground">Enter a screen route to navigate the user when they tap the notification.</p>
                             </div>
                         </div>
 

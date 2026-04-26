@@ -10,6 +10,7 @@ export default function NotificationsPage() {
     const [target, setTarget] = useState<'users' | 'riders'>('users')
     const [title, setTitle] = useState('')
     const [body, setBody] = useState('')
+    const [link, setLink] = useState('')
     const [loading, setLoading] = useState(false)
     const [status, setStatus] = useState<{ type: 'success' | 'error', message: string } | null>(null)
 
@@ -25,7 +26,7 @@ export default function NotificationsPage() {
             const res = await fetch(`${API_BASE}/admin/push-all?target=${target}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ title, body })
+                body: JSON.stringify({ title, body, link: link || undefined })
             })
             const data = await res.json()
             if (res.ok) {
@@ -35,6 +36,7 @@ export default function NotificationsPage() {
                 })
                 setTitle('')
                 setBody('')
+                setLink('')
             } else {
                 setStatus({ type: 'error', message: data.detail || 'Failed to send notifications.' })
             }
@@ -104,9 +106,19 @@ export default function NotificationsPage() {
                                     value={body}
                                     onChange={(e) => setBody(e.target.value)}
                                     placeholder="Enter the message content here..."
-                                    rows={4}
+                                    rows={3}
                                     className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:ring-2 focus:ring-primary/50 transition-all placeholder:text-white/20 resize-none"
                                 />
+                            </div>
+                            <div>
+                                <label className="text-sm font-medium text-white mb-1.5 block">Deep Link / Route (Optional)</label>
+                                <input
+                                    value={link}
+                                    onChange={(e) => setLink(e.target.value)}
+                                    placeholder="e.g. /payment-flow or /profile"
+                                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:ring-2 focus:ring-primary/50 transition-all placeholder:text-white/20"
+                                />
+                                <p className="text-[11px] text-muted-foreground mt-1">This will navigate the user to the specified screen when they tap the notification.</p>
                             </div>
                         </div>
 
