@@ -297,8 +297,44 @@ export default function RidersPage() {
                                                 <input value={formData.father_name || ''} onChange={(e) => setFormData((p: any) => ({ ...p, father_name: e.target.value }))} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm" placeholder="Father's full name" />
                                             </div>
                                             <div>
-                                                <label className="text-xs text-muted-foreground mb-1 block">Profile Photo URL</label>
-                                                <input value={formData.profile_photo || ''} onChange={(e) => setFormData((p: any) => ({ ...p, profile_photo: e.target.value }))} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm" placeholder="https://..." />
+                                                <label className="text-xs text-muted-foreground mb-1 block">Profile Photo</label>
+                                                <div className="flex gap-2">
+                                                    <input 
+                                                        value={formData.profile_photo || ''} 
+                                                        onChange={(e) => setFormData((p: any) => ({ ...p, profile_photo: e.target.value }))} 
+                                                        className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm" 
+                                                        placeholder="S3 Key or URL" 
+                                                    />
+                                                    <label className="px-4 py-2.5 bg-white/10 hover:bg-white/20 rounded-xl text-sm font-medium transition-all cursor-pointer flex items-center gap-2">
+                                                        <Camera className="w-4 h-4" />
+                                                        <span>Upload</span>
+                                                        <input 
+                                                            type="file" 
+                                                            accept="image/*" 
+                                                            className="hidden" 
+                                                            onChange={async (e) => {
+                                                                const file = e.target.files?.[0]
+                                                                if (!file || !editRider) {
+                                                                    if (!editRider) alert("Please save the rider first before uploading a photo, or wait for future update to support upload during creation.")
+                                                                    return
+                                                                }
+                                                                const formDataUpload = new FormData()
+                                                                formDataUpload.append('file', file)
+                                                                const res = await fetch(`${API_BASE}/riders/${editRider.id}/photo`, {
+                                                                    method: 'POST',
+                                                                    body: formDataUpload
+                                                                })
+                                                                if (res.ok) {
+                                                                    const data = await res.json()
+                                                                    setFormData((p: any) => ({ ...p, profile_photo: data.profile_photo, profile_photo_url: data.url }))
+                                                                    alert("Photo uploaded successfully!")
+                                                                } else {
+                                                                    alert("Upload failed")
+                                                                }
+                                                            }} 
+                                                        />
+                                                    </label>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
@@ -505,8 +541,8 @@ export default function RidersPage() {
                                 <tr key={rider.id} className="hover:bg-white/[0.03] transition-colors group">
                                     <td className="px-6 py-5">
                                         <div className="flex items-center gap-4">
-                                            {rider.profile_photo ? (
-                                                <img src={rider.profile_photo} className="w-12 h-12 rounded-2xl object-cover border border-white/10" alt="" />
+                                            {rider.profile_photo_url || rider.profile_photo ? (
+                                                <img src={rider.profile_photo_url || rider.profile_photo} className="w-12 h-12 rounded-2xl object-cover border border-white/10" alt="" />
                                             ) : (
                                                 <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center border border-primary/20">
                                                     <span className="font-bold text-primary text-lg">{rider.name?.[0]}</span>
