@@ -65,9 +65,9 @@ function validate(form: FormState): string | null {
     if (url) {
         try {
             const parsed = new URL(url)
-            if (parsed.protocol !== 'https:') return 'Play Store link must use HTTPS.'
+            if (parsed.protocol !== 'https:') return 'Store link must use HTTPS.'
         } catch {
-            return 'Play Store link must be a valid URL.'
+            return 'Store link must be a valid URL.'
         }
     }
 
@@ -83,7 +83,10 @@ function validate(form: FormState): string | null {
     return null
 }
 
+type Platform = 'android' | 'ios'
+
 export default function ConfigPage() {
+    const [platform, setPlatform] = useState<Platform>('android')
     const [form, setForm] = useState<FormState>(emptyForm)
     const [loading, setLoading] = useState(true)
     const [saving, setSaving] = useState(false)
@@ -93,8 +96,9 @@ export default function ConfigPage() {
     const loadConfig = useCallback(async () => {
         setLoading(true)
         setError(null)
+        setSaved(false)
         try {
-            const res = await fetch(`${API_BASE}/admin/app-config`, { cache: 'no-store' })
+            const res = await fetch(`${API_BASE}/admin/app-config?platform=${platform}`, { cache: 'no-store' })
             if (!res.ok) throw new Error(await res.text())
             const data = await res.json()
             setForm(normalizeForm(data))
@@ -103,7 +107,7 @@ export default function ConfigPage() {
         } finally {
             setLoading(false)
         }
-    }, [])
+    }, [platform])
 
     useEffect(() => { loadConfig() }, [loadConfig])
 
@@ -139,7 +143,7 @@ export default function ConfigPage() {
                 app_description: form.app_description.trim() || null,
             }
 
-            const res = await fetch(`${API_BASE}/admin/app-config`, {
+            const res = await fetch(`${API_BASE}/admin/app-config?platform=${platform}`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload),
@@ -164,7 +168,7 @@ export default function ConfigPage() {
                         Config
                     </h1>
                     <p className="text-muted-foreground text-sm mt-1">
-                        Manage Praja app update settings and Play Store redirect.
+                        Manage Praja app update settings — Android and iOS are configured independently.
                     </p>
                 </div>
                 <button
@@ -213,17 +217,41 @@ export default function ConfigPage() {
                 </div>
             )}
 
+            {/* Platform tabs — Android and iOS each have their own app_configs row.
+                Switching tabs reloads the form for that platform. */}
+            <div className="inline-flex rounded-lg border border-white/10 bg-card/40 p-1">
+                {(['android', 'ios'] as Platform[]).map((p) => (
+                    <button
+                        key={p}
+                        type="button"
+                        onClick={() => setPlatform(p)}
+                        disabled={saving}
+                        className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${
+                            platform === p
+                                ? 'bg-primary/20 text-white border border-primary/30'
+                                : 'text-muted-foreground hover:text-white'
+                        }`}
+                    >
+                        {p === 'android' ? '🤖 Android' : '🍎 iOS'}
+                    </button>
+                ))}
+            </div>
+
             <form onSubmit={handleSubmit} className="space-y-5">
                 <div className="rounded-xl border border-white/10 bg-card/40 p-5 space-y-5">
                     <div className="grid gap-5 md:grid-cols-2">
                         <div className="space-y-2 md:col-span-2">
-                            <label className="text-sm font-medium text-white">Play Store link</label>
+                            <label className="text-sm font-medium text-white">
+                                {platform === 'ios' ? 'App Store link' : 'Play Store link'}
+                            </label>
                             <div className="flex gap-2">
                                 <input
                                     type="url"
                                     value={form.play_store_url}
                                     onChange={e => updateField('play_store_url', e.target.value)}
-                                    placeholder="https://play.google.com/store/apps/details?id=..."
+                                    placeholder={platform === 'ios'
+                                        ? 'https://apps.apple.com/in/app/famcare/id6761720384'
+                                        : 'https://play.google.com/store/apps/details?id=...'}
                                     className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder-muted-foreground focus:outline-none focus:border-primary/50"
                                 />
                                 <a
@@ -240,7 +268,9 @@ export default function ConfigPage() {
                         </div>
 
                         <div className="space-y-2">
-                            <label className="text-sm font-medium text-white">Latest Android version</label>
+                            <label className="text-sm font-medium text-white">
+                                Latest {platform === 'ios' ? 'iOS' : 'Android'} version
+                            </label>
                             <input
                                 type="text"
                                 value={form.latest_version}
@@ -251,7 +281,9 @@ export default function ConfigPage() {
                         </div>
 
                         <div className="space-y-2">
-                            <label className="text-sm font-medium text-white">Latest Android build number</label>
+                            <label className="text-sm font-medium text-white">
+                                Latest {platform === 'ios' ? 'iOS' : 'Android'} build number
+                            </label>
                             <input
                                 type="number"
                                 min="0"
