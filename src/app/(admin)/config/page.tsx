@@ -9,6 +9,8 @@ type AppConfig = {
     play_store_url: string | null
     latest_version: string | null
     latest_build_number: number | null
+    min_supported_version: string | null
+    min_supported_build_number: number | null
     force_update: boolean
     update_title: string | null
     update_message: string | null
@@ -23,6 +25,8 @@ type FormState = {
     play_store_url: string
     latest_version: string
     latest_build_number: string
+    min_supported_version: string
+    min_supported_build_number: string
     force_update: boolean
     update_title: string
     update_message: string
@@ -36,6 +40,8 @@ const emptyForm: FormState = {
     play_store_url: '',
     latest_version: '',
     latest_build_number: '',
+    min_supported_version: '',
+    min_supported_build_number: '',
     force_update: false,
     update_title: 'Update available',
     update_message: 'A newer version is available. Please update to continue.',
@@ -50,6 +56,9 @@ function normalizeForm(config: AppConfig): FormState {
         play_store_url: config.play_store_url || '',
         latest_version: config.latest_version || '',
         latest_build_number: config.latest_build_number == null ? '' : String(config.latest_build_number),
+        min_supported_version: config.min_supported_version || '',
+        min_supported_build_number:
+            config.min_supported_build_number == null ? '' : String(config.min_supported_build_number),
         force_update: Boolean(config.force_update),
         update_title: config.update_title || 'Update available',
         update_message: config.update_message || 'A newer version is available. Please update to continue.',
@@ -78,6 +87,15 @@ function validate(form: FormState): string | null {
     if (form.latest_build_number.trim()) {
         const build = Number(form.latest_build_number)
         if (!Number.isInteger(build) || build < 0) return 'Build number must be a positive integer.'
+    }
+
+    if (form.min_supported_version.trim() && !/^\d+(\.\d+){1,3}$/.test(form.min_supported_version.trim())) {
+        return 'Minimum supported version should look like 1.0.1.'
+    }
+
+    if (form.min_supported_build_number.trim()) {
+        const build = Number(form.min_supported_build_number)
+        if (!Number.isInteger(build) || build < 0) return 'Minimum build must be a positive integer.'
     }
 
     return null
@@ -133,6 +151,10 @@ export default function ConfigPage() {
                 play_store_url: form.play_store_url.trim() || null,
                 latest_version: form.latest_version.trim() || null,
                 latest_build_number: form.latest_build_number.trim() ? Number(form.latest_build_number) : null,
+                min_supported_version: form.min_supported_version.trim() || null,
+                min_supported_build_number: form.min_supported_build_number.trim()
+                    ? Number(form.min_supported_build_number)
+                    : null,
                 force_update: form.force_update,
                 update_title: form.update_title.trim() || 'Update available',
                 update_message: form.update_message.trim() || 'A newer version is available. Please update to continue.',
@@ -293,6 +315,39 @@ export default function ConfigPage() {
                                 placeholder="2"
                                 className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder-muted-foreground focus:outline-none focus:border-primary/50"
                             />
+                        </div>
+
+                        <div className="md:col-span-2 rounded-lg border border-white/10 bg-white/[0.02] p-4">
+                            <p className="text-sm font-medium text-white mb-1">Minimum supported version</p>
+                            <p className="text-xs text-muted-foreground mb-3">
+                                Users below this threshold are <span className="text-amber-300">forced</span> to update.
+                                Users between this and Latest version see a skippable prompt. Leave empty to keep all
+                                updates skippable (unless &quot;Force update&quot; is on).
+                            </p>
+                            <div className="grid gap-3 md:grid-cols-2">
+                                <div className="space-y-2">
+                                    <label className="text-xs font-medium text-muted-foreground">Min version</label>
+                                    <input
+                                        type="text"
+                                        value={form.min_supported_version}
+                                        onChange={e => updateField('min_supported_version', e.target.value)}
+                                        placeholder="e.g. 1.0.5"
+                                        className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder-muted-foreground focus:outline-none focus:border-primary/50"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-xs font-medium text-muted-foreground">Min build number</label>
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        step="1"
+                                        value={form.min_supported_build_number}
+                                        onChange={e => updateField('min_supported_build_number', e.target.value)}
+                                        placeholder="optional"
+                                        className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder-muted-foreground focus:outline-none focus:border-primary/50"
+                                    />
+                                </div>
+                            </div>
                         </div>
 
                         <label className="flex items-center gap-3 rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-sm text-white">
