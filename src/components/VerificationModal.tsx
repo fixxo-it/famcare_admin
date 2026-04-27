@@ -247,6 +247,25 @@ export default function VerificationModal({ rider, isOpen, onClose, onVerificati
                                                 </span>
                                             </div>
                                         </div>
+                                        
+                                        {/* BGV URL for manual verification */}
+                                        {statusData.springverify_bgv_url && statusData.springverify_status === 'in_progress' && (
+                                            <div className="p-4 bg-primary/5 border border-primary/20 rounded-2xl space-y-3">
+                                                <div className="flex items-center gap-2 text-primary font-bold text-xs uppercase tracking-wider">
+                                                    <FileText className="w-4 h-4" />
+                                                    Admin Action Required
+                                                </div>
+                                                <p className="text-xs text-muted-foreground">
+                                                    Open the verification form to fill the rider&apos;s details on their behalf.
+                                                </p>
+                                                <button
+                                                    onClick={() => window.open(statusData.springverify_bgv_url, '_blank')}
+                                                    className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-primary text-white rounded-xl text-sm font-semibold hover:shadow-[0_0_15px_rgba(255,51,102,0.2)] transition-all"
+                                                >
+                                                    Open Verification Form
+                                                </button>
+                                            </div>
+                                        )}
 
                                         {/* Report download */}
                                         {statusData.springverify_status === 'verified' && (
