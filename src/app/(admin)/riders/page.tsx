@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { Bike, Star, MapPin, Search, RefreshCw, PlusCircle, X, CheckCircle2, Users, Pencil, Trash2, ShieldCheck, Briefcase, BookOpen, Plus, Bell, FileCheck, Loader2, AlertCircle, Download } from 'lucide-react'
+import { Bike, Star, MapPin, Search, RefreshCw, PlusCircle, X, CheckCircle2, Users, Pencil, Trash2, ShieldCheck, Briefcase, BookOpen, Plus, Bell, FileCheck, Loader2, AlertCircle, Download, Camera } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import PushNotificationModal from '@/components/PushNotificationModal'
 import VerificationModal from '@/components/VerificationModal'
