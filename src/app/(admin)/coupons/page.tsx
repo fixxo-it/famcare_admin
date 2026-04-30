@@ -28,6 +28,7 @@ export default function CouponsPage() {
         usage_limit: 0,
         per_user_limit: 0,
         allowed_sub_service_ids: [] as string[],
+        terms: '',
         is_active: true
     })
     const [submitting, setSubmitting] = useState(false)
@@ -116,6 +117,7 @@ export default function CouponsPage() {
             usage_limit: 0,
             per_user_limit: 0,
             allowed_sub_service_ids: [],
+            terms: '',
             is_active: true
         })
     }
@@ -132,6 +134,7 @@ export default function CouponsPage() {
             usage_limit: coupon.usage_limit || 0,
             per_user_limit: coupon.per_user_limit || 0,
             allowed_sub_service_ids: coupon.allowed_sub_service_ids || [],
+            terms: coupon.terms || '',
             is_active: coupon.is_active
         })
         setShowForm(true)
@@ -229,6 +232,15 @@ export default function CouponsPage() {
                                             <span className="text-sm text-muted-foreground group-hover:text-white transition-colors">Active</span>
                                         </label>
                                     </div>
+                                    <div className="md:col-span-3">
+                                        <label className="text-xs text-muted-foreground mb-1 block">Custom Terms & Conditions (Optional)</label>
+                                        <textarea 
+                                            value={formData.terms} 
+                                            onChange={(e) => setFormData(p => ({ ...p, terms: e.target.value }))} 
+                                            className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2.5 text-sm h-20 resize-none" 
+                                            placeholder="e.g. Valid only for new users. Minimum spend applies."
+                                        />
+                                    </div>
                                 </div>
 
                                 {/* Sub-service selector */}
@@ -309,6 +321,12 @@ export default function CouponsPage() {
                                 <p className="text-sm font-medium">{coupon.min_order_value ? `₹${coupon.min_order_value}` : 'None'}</p>
                             </div>
                         </div>
+                        {coupon.terms && (
+                            <div className="mt-4 p-3 bg-white/5 rounded-lg border border-white/5">
+                                <p className="text-[10px] uppercase text-muted-foreground font-bold font-mono mb-1.5">Custom Terms</p>
+                                <p className="text-xs text-muted-foreground italic leading-relaxed">"{coupon.terms}"</p>
+                            </div>
+                        )}
                         {/* Allowed services tags */}
                         {coupon.allowed_sub_service_ids?.length > 0 && (
                             <div className="mt-4 pt-4 border-t border-white/5">
