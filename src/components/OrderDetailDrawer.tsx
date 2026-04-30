@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
     X, User, Baby, HeartPulse, PawPrint, MapPin, CreditCard,
     Package, Clock, Phone, Wallet, CalendarDays, Bike, Star,
-    History, Hash, Gift, CheckCircle2, Circle
+    History, Hash, Gift, CheckCircle2, Circle, XCircle
 } from 'lucide-react'
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api'
@@ -108,6 +108,7 @@ function inferCareType(req: EnrichedRequest): 'child' | 'elderly' | 'pet' | null
 interface Props {
     request: EnrichedRequest | null
     onClose: () => void
+    onCancel?: (id: string) => void
 }
 
 export default function OrderDetailDrawer({ request, onClose }: Props) {
@@ -131,7 +132,7 @@ export default function OrderDetailDrawer({ request, onClose }: Props) {
                         transition={{ type: 'spring', damping: 28, stiffness: 280 }}
                         className="fixed right-0 top-0 h-full w-full sm:w-[480px] lg:w-[560px] bg-background border-l border-white/10 shadow-2xl z-[95] overflow-y-auto"
                     >
-                        <DrawerBody request={request} onClose={onClose} />
+                        <DrawerBody request={request} onClose={onClose} onCancel={onCancel} />
                     </motion.aside>
                 </>
             )}
@@ -148,7 +149,7 @@ interface EventLog {
     created_at: string
 }
 
-function DrawerBody({ request, onClose }: { request: EnrichedRequest; onClose: () => void }) {
+function DrawerBody({ request, onClose, onCancel }: { request: EnrichedRequest; onClose: () => void; onCancel?: (id: string) => void }) {
     const careType = inferCareType(request)
     const customer = request.customer
     const subService = request.sub_service
@@ -200,15 +201,26 @@ function DrawerBody({ request, onClose }: { request: EnrichedRequest; onClose: (
 
             <div className="p-6 space-y-6">
                 {/* Status */}
-                <div className="flex items-center gap-3">
-                    <span className={`status-badge status-${request.status}`}>
-                        <span className="w-1.5 h-1.5 rounded-full bg-current" />
-                        {request.status?.replace('_', ' ')}
-                    </span>
-                    {request.created_at && (
-                        <span className="text-xs text-muted-foreground">
-                            Created {new Date(request.created_at).toLocaleString('en-IN')}
+                <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                        <span className={`status-badge status-${request.status}`}>
+                            <span className="w-1.5 h-1.5 rounded-full bg-current" />
+                            {request.status?.replace('_', ' ')}
                         </span>
+                        {request.created_at && (
+                            <span className="text-xs text-muted-foreground">
+                                Created {new Date(request.created_at).toLocaleString('en-IN')}
+                            </span>
+                        )}
+                    </div>
+                    {request.status !== 'cancelled' && (
+                        <button
+                            onClick={() => onCancel?.(request.id)}
+                            className="flex items-center gap-1.5 px-3 py-1.5 bg-red-500/10 text-red-500 text-xs font-bold rounded-lg border border-red-500/20 hover:bg-red-500/20 transition-all"
+                        >
+                            <XCircle className="w-3.5 h-3.5" />
+                            Force Cancel
+                        </button>
                     )}
                 </div>
 

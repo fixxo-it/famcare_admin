@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback, Suspense } from 'react'
-import { Package, Clock, CheckCircle2, AlertCircle, Search, RefreshCw, UserPlus, Filter, ShieldAlert, Eye, Loader2 } from 'lucide-react'
+import { Package, Clock, CheckCircle2, AlertCircle, Search, RefreshCw, UserPlus, Filter, ShieldAlert, Eye, Loader2, XCircle } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import OrderDetailDrawer, { EnrichedRequest } from '@/components/OrderDetailDrawer'
 import { useAdminSocketContext } from '@/components/AdminSocketProvider'
@@ -106,6 +106,23 @@ function RequestsPageInner() {
             }
         } catch (e) {
             alert('Resolve failed')
+        }
+    }
+
+    const handleCancel = async (requestId: string) => {
+        if (!confirm('FORCE CANCEL: Are you sure? This will override all status restrictions and cancel the booking immediately.')) return
+        try {
+            const res = await fetch(`${API_BASE}/admin/requests/${requestId}/cancel`, {
+                method: 'POST',
+            })
+            if (res.ok) {
+                fetchData()
+            } else {
+                const err = await res.json()
+                alert(`Cancel failed: ${err.detail || 'Unknown error'}`)
+            }
+        } catch (e: any) {
+            alert(`Cancel failed: ${e.message}`)
         }
     }
 
@@ -297,6 +314,13 @@ function RequestsPageInner() {
                                                 >
                                                     <Eye className="w-3.5 h-3.5" />
                                                 </button>
+                                                <button
+                                                    onClick={(e) => { e.stopPropagation(); handleCancel(req.id) }}
+                                                    className="p-1.5 bg-red-500/10 text-red-500 text-xs rounded-lg hover:bg-red-500/20 transition-colors border border-red-500/20"
+                                                    title="Force Cancel"
+                                                >
+                                                    <XCircle className="w-3.5 h-3.5" />
+                                                </button>
                                             {(req.status === 'new' || req.status === 'scheduled') && !req.assigned_rider_id ? (
                                                 assigningId === req.id ? (
                                                     <div className="flex items-center gap-2 justify-end">
@@ -366,6 +390,9 @@ function RequestsPageInner() {
             <OrderDetailDrawer
                 request={selectedRequest}
                 onClose={() => setSelectedRequest(null)}
+                onCancel={(id) => {
+                    handleCancel(id)
+                }}
             />
         </div>
     )
