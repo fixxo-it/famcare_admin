@@ -162,7 +162,9 @@ export default function BannersPage() {
         subtitle: '',
         is_active: true,
         display_order: 0,
+        service_id: '',
     })
+    const [categories, setCategories] = useState<any[]>([])
 
     const fetchBanners = useCallback(async () => {
         setLoading(true)
@@ -176,12 +178,31 @@ export default function BannersPage() {
             setLoading(false)
         }
     }, [])
+    const fetchCategories = useCallback(async () => {
+        try {
+            const res = await fetch(`${API_BASE}/services/categories`, { cache: 'no-store' })
+            const data = await res.json()
+            setCategories(Array.isArray(data) ? data : [])
+        } catch (e) {
+            console.error('Failed to fetch categories:', e)
+        }
+    }, [])
 
-    useEffect(() => { fetchBanners() }, [fetchBanners])
+    useEffect(() => { 
+        fetchBanners()
+        fetchCategories()
+    }, [fetchBanners, fetchCategories])
 
     const openCreate = () => {
         setEditItem(null)
-        setFormData({ image_url: '', title: '', subtitle: '', is_active: true, display_order: banners.length })
+        setFormData({ 
+            image_url: '', 
+            title: '', 
+            subtitle: '', 
+            is_active: true, 
+            display_order: banners.length,
+            service_id: '',
+        })
         setShowForm(true)
     }
 
@@ -193,6 +214,7 @@ export default function BannersPage() {
             subtitle: banner.subtitle || '',
             is_active: banner.is_active,
             display_order: banner.display_order,
+            service_id: banner.service_id || '',
         })
         setShowForm(true)
     }
@@ -425,6 +447,23 @@ export default function BannersPage() {
                                         placeholder="Supporting text"
                                         className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white placeholder-muted-foreground focus:outline-none focus:border-primary/50"
                                     />
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm text-muted-foreground mb-1.5">Link to Service (optional)</label>
+                                    <select
+                                        value={formData.service_id}
+                                        onChange={e => setFormData(p => ({ ...p, service_id: e.target.value }))}
+                                        className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-primary/50"
+                                    >
+                                        <option value="" className="bg-slate-900">None — No link</option>
+                                        {categories.map(cat => (
+                                            <option key={cat.id} value={cat.id} className="bg-slate-900">
+                                                {cat.name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                    <p className="text-[10px] text-muted-foreground mt-1">If selected, clicking this banner in the app will open the booking flow for this category.</p>
                                 </div>
 
                                 <div className="grid grid-cols-2 gap-4">
