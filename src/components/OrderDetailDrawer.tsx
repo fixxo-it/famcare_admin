@@ -111,7 +111,7 @@ interface Props {
     onCancel?: (id: string) => void
 }
 
-export default function OrderDetailDrawer({ request, onClose }: Props) {
+export default function OrderDetailDrawer({ request, onClose, onCancel }: Props) {
     return (
         <AnimatePresence>
             {request && (
