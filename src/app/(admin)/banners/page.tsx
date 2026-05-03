@@ -180,7 +180,7 @@ export default function BannersPage() {
     }, [])
     const fetchCategories = useCallback(async () => {
         try {
-            const res = await fetch(`${API_BASE}/services/categories`, { cache: 'no-store' })
+            const res = await fetch(`${API_BASE}/services/`, { cache: 'no-store' })
             const data = await res.json()
             setCategories(Array.isArray(data) ? data : [])
         } catch (e) {
