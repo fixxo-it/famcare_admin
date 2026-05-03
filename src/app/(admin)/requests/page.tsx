@@ -60,13 +60,41 @@ function RequestsPageInner() {
 
     // Live updates: when a new order arrives, append to the list
     useEffect(() => {
-        const off = on<EnrichedRequest>('new_order', (e) => {
+        const offNew = on<EnrichedRequest>('new_order', (e) => {
+            // Play notification sound
+            try {
+                const audio = new Audio('/sounds/notification.wav')
+                audio.play().catch(err => console.warn('Sound play failed:', err))
+            } catch (e) {
+                console.warn('Audio not supported')
+            }
+
             setRequests((prev) => {
                 if (prev.find((p) => p.id === e.payload.id)) return prev
                 return [e.payload, ...prev]
             })
         })
-        return () => { off() }
+
+        const offUpdate = on<EnrichedRequest>('order_updated', (e) => {
+            setRequests((prev) => {
+                const index = prev.findIndex((p) => p.id === e.payload.id)
+                if (index === -1) return [e.payload, ...prev] // If not found, append (just in case)
+                const next = [...prev]
+                next[index] = e.payload
+                return next
+            })
+            
+            // If the updated request is the one currently being viewed in the drawer, update it
+            setSelectedRequest(current => {
+                if (current?.id === e.payload.id) return e.payload
+                return current
+            })
+        })
+
+        return () => { 
+            offNew()
+            offUpdate()
+        }
     }, [on])
 
     const handleRefresh = () => {
